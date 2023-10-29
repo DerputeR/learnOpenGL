@@ -5,6 +5,16 @@
 const int kDefaultWindowWidth = 800;
 const int kDefaultWindowHeight = 600;
 
+void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
+	glViewport(0, 0, width, height);
+}
+
+void processInput(GLFWwindow* window) {
+	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+		glfwSetWindowShouldClose(window, true);
+	}
+}
+
 int main() {
 	std::cout << "Creating window..." << std::endl;
 
@@ -30,5 +40,21 @@ int main() {
 
 	glViewport(0, 0, kDefaultWindowWidth, kDefaultWindowHeight);
 
+	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+
+	while (!glfwWindowShouldClose(window)) {
+		// input
+		processInput(window);
+
+		// render
+		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		// check and call events and swap buffers
+		glfwPollEvents();
+		glfwSwapBuffers(window);
+	}
+
+	glfwTerminate();
 	return 0;
 }
