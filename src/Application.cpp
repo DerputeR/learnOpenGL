@@ -5,6 +5,13 @@
 const int kDefaultWindowWidth = 800;
 const int kDefaultWindowHeight = 600;
 
+const char* vertexShaderSource = "#version 330 core\n"
+"layout (location = 0) in vec3 aPos;\n"
+"void main()\n"
+"{\n"
+" gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+"}\0";
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
 }
@@ -41,6 +48,24 @@ int main() {
 	glViewport(0, 0, kDefaultWindowWidth, kDefaultWindowHeight);
 
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+
+	// temporary vertices
+	float vertices[] = {
+		-0.5f, -0.5f, 0.0f,
+		0.5f, -0.5f, 0.0f,
+		0.0f, 0.5f, 0.0f
+	};
+
+	unsigned int VBO;
+	glGenBuffers(1, &VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	// ? should size be of entire array contents or just for the size of each element?
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	unsigned int vertexShader;
+	vertexShader = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+	glCompileShader(vertexShader);
 
 	while (!glfwWindowShouldClose(window)) {
 		// input
