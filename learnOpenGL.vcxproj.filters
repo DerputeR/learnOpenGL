@@ -45,4 +45,7 @@
   <ItemGroup>
     <None Include="resources\shaders\vertex_basic.shader" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="resources\shaders\fragment_basic.shader" />
+  </ItemGroup>
 </Project>
