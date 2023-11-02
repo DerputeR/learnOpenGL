@@ -79,10 +79,10 @@ int main() {
 
 	// temporary vertices for a diamond shape
 	float vertices[] = {
-		-0.5f, 0.0f, 0.0f, // left
-		0.5f, 0.0f, 0.0f,  // right
-		0.0f, 0.5f, 0.0f,  // top
-		0.0f, -0.5f, 0.0f  // bottom
+		// x, y, z, r, g, b
+		-0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, // left
+		0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f,  // right
+		0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f,  // top
 	};
 
 	// get into habit of drawing CCW
@@ -110,12 +110,18 @@ int main() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 	/* Set vertex attributes pointers.
-	Attribute (0) has (3) non-normalized(GL_FALSE) (GL_FLOAT) elements.
-	It starts at (0) byte offset, and repeats every (3 * sizeof(float)) bytes.
+	Attribute (0) (x, y, z) has (3) non-normalized(GL_FALSE) (GL_FLOAT) elements.
+	It starts at (0) byte offset, and repeats every (6 * sizeof(float)) bytes.
+
+	Attribute (1) (r, g, b) has (3) non-normalized(GL_FALSE) (FL_FLOAT) elements.
+	It starts at (3 * sizeof(float)) byte offset, and repeats every (6 * sizeof(float)) bytes.
 	*/
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	// enable attribute 0
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+	// enable attribute 0 (x, y, z)
 	glEnableVertexAttribArray(0);
+	// enable attribute 1 (r, g, b)
+	glEnableVertexAttribArray(1);
 
 	// unbind VAO to stop tracking state
 	glBindVertexArray(NULL);
@@ -134,6 +140,9 @@ int main() {
 
 	while (!glfwWindowShouldClose(window)) {
 		time = glfwGetTime();
+		for (int i = 0; i < 3; i++) {
+			vertices[6 * i + 6] = 0.5f * (sin(time) + 1.0f);
+		}
 
 		// input
 		PollInput(window, &keys);
