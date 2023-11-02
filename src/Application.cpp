@@ -161,7 +161,13 @@ int main() {
 	unsigned int shaderProgram = ShaderLoader::CreateShaderProgram(shaderSources.vertShaderSrc, shaderSources.fragShaderSrc);
 	unsigned int shaderProgram2 = ShaderLoader::CreateShaderProgram(shaderSources2.vertShaderSrc, shaderSources2.fragShaderSrc);	
 
+	double time = glfwGetTime();
+	int timeUniformLocation = glGetUniformLocation(shaderProgram2, "time");
+
 	while (!glfwWindowShouldClose(window)) {
+		time = glfwGetTime();
+
+
 		// input
 		PollInput(window, &keys);
 		ProcessInput(window, &keys);
@@ -177,6 +183,7 @@ int main() {
 		DrawTriangle(VAO);
 		if (shaderProgram2) {
 			glUseProgram(shaderProgram2);
+			glUniform1f(timeUniformLocation, time);
 		}
 		DrawTriangle(VAO2);
 
