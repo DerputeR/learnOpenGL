@@ -10,7 +10,6 @@ const int kDefaultWindowHeight = 600;
 
 static std::string vertShaderPath = "resources/shaders/vertex_basic.glsl";
 static std::string fragShaderPath = "resources/shaders/fragment_basic.glsl";
-static std::string fragShaderPath2 = "resources/shaders/fragment_basic2.glsl";
 
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
@@ -86,32 +85,20 @@ int main() {
 		0.0f, -0.5f, 0.0f  // bottom
 	};
 
-	float vertices2[] = {
-		-0.5f, 0.5f, 0.0f, // left
-		0.5f, 0.5f, 0.0f,  // right
-		0.0f, 1.0f, 0.0f,  // top
-		0.0f, 0.0f, 0.0f  // bottom
-	};
-
 	// get into habit of drawing CCW
 	unsigned int indices[] = {
 		1, 2, 0,
-		0, 3, 1
 	};
 
 	// Vertex buffer object
 	unsigned int VBO;
-	unsigned int VBO2;
 	glGenBuffers(1, &VBO);
-	glGenBuffers(1, &VBO2);
 	// Element buffer object
 	unsigned int EBO;
 	glGenBuffers(1, &EBO);
 	// Vertex array(attribute) object
 	unsigned int VAO;
-	unsigned int VAO2;
 	glGenVertexArrays(1, &VAO);
-	glGenVertexArrays(1, &VAO2);
 
 	// bind VAO to start tracking state
 	glBindVertexArray(VAO);
@@ -119,23 +106,6 @@ int main() {
 	// bind VBO and copy vertices array to buffer
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-	// bind EBO and copy indices array to buffer
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-	/* Set vertex attributes pointers.
-	Attribute (0) has (3) non-normalized(GL_FALSE) (GL_FLOAT) elements.
-	It starts at (0) byte offset, and repeats every (3 * sizeof(float)) bytes.
-	*/
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	// enable attribute 0
-	glEnableVertexAttribArray(0);
-
-	// bind VAO to start tracking state
-	glBindVertexArray(VAO2);
-
-	// bind VBO and copy vertices array to buffer
-	glBindBuffer(GL_ARRAY_BUFFER, VBO2);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices2), vertices2, GL_STATIC_DRAW);
 	// bind EBO and copy indices array to buffer
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
@@ -155,37 +125,31 @@ int main() {
 
 	// parse and prepare shader code
 	ShaderLoader::ShaderSources shaderSources = ShaderLoader::ParseShaderSources(vertShaderPath, fragShaderPath);
-	ShaderLoader::ShaderSources shaderSources2 = ShaderLoader::ParseShaderSources(vertShaderPath, fragShaderPath2);
 
 	// compile, link, and validate shader program
-	unsigned int shaderProgram = ShaderLoader::CreateShaderProgram(shaderSources.vertShaderSrc, shaderSources.fragShaderSrc);
-	unsigned int shaderProgram2 = ShaderLoader::CreateShaderProgram(shaderSources2.vertShaderSrc, shaderSources2.fragShaderSrc);	
+	unsigned int shaderProgram = ShaderLoader::CreateShaderProgram(shaderSources.vertShaderSrc, shaderSources.fragShaderSrc);	
 
 	double time = glfwGetTime();
-	int timeUniformLocation = glGetUniformLocation(shaderProgram2, "time");
+	int timeUniformLocation = glGetUniformLocation(shaderProgram, "time");
 
 	while (!glfwWindowShouldClose(window)) {
 		time = glfwGetTime();
-
 
 		// input
 		PollInput(window, &keys);
 		ProcessInput(window, &keys);
 
-		// render
+		// clear last render
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 		
-		// activate shader program if successful
+		// render
+		// draw triangle
 		if (shaderProgram) {
 			glUseProgram(shaderProgram);
-		}
-		DrawTriangle(VAO);
-		if (shaderProgram2) {
-			glUseProgram(shaderProgram2);
 			glUniform1f(timeUniformLocation, time);
 		}
-		DrawTriangle(VAO2);
+		DrawTriangle(VAO);
 
 		// check and call events and swap buffers
 		glfwPollEvents();
