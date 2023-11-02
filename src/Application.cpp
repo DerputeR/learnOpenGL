@@ -43,8 +43,10 @@ void ProcessInput(GLFWwindow* window, std::vector<BasicInput::Key>* keys) {
 	}
 }
 
-void DrawTriangle() {
-	/*glBindVertexArray(VAO);*/
+void DrawTriangle(unsigned int vao) {
+	glBindVertexArray(vao);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(NULL);
 }
 
 int main() {
@@ -88,24 +90,31 @@ int main() {
 		0, 3, 1
 	};
 
-
+	// Vertex buffer object
 	unsigned int VBO;
 	glGenBuffers(1, &VBO);
-	unsigned int VAO;
-	glGenVertexArrays(1, &VAO);
+	// Element buffer object
 	unsigned int EBO;
 	glGenBuffers(1, &EBO);
+	// Vertex array(attribute) object
+	unsigned int VAO;
+	glGenVertexArrays(1, &VAO);
 	
-	// bind VAO
+	// bind VAO to start tracking state
 	glBindVertexArray(VAO);
-	// copy vertices array to buffer
+
+	// bind VBO and copy vertices array to buffer
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-	// copy indices array to buffer
+	// bind EBO and copy indices array to buffer
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-	// set vertex attributes pointers
+	/* Set vertex attributes pointers.
+	Attribute (0) has (3) non-normalized(GL_FALSE) (GL_FLOAT) elements.
+	It starts at (0) byte offset, and repeats every (3 * sizeof(float)) bytes.
+	*/
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	// enable attribute 0
 	glEnableVertexAttribArray(0);
 
 
@@ -120,6 +129,8 @@ int main() {
 		glUseProgram(shaderProgram);
 	}
 
+	// unbind VAO to stop tracking state
+	glBindVertexArray(NULL);
 
 	while (!glfwWindowShouldClose(window)) {
 		// input
@@ -129,8 +140,8 @@ int main() {
 		// render
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
-		//glDrawArrays(GL_TRIANGLES, 0, 3);
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		
+		DrawTriangle(VAO);
 
 		// check and call events and swap buffers
 		glfwPollEvents();
