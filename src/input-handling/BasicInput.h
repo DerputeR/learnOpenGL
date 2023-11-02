@@ -2,7 +2,6 @@
 #include <inttypes.h>
 #include <string>
 #include <vector>
-#include <functional>
 
 class BasicInput {
 	static const char kCurrentStateMask = 1;
