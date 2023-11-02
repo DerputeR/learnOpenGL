@@ -27,6 +27,18 @@
     <ClCompile Include="src\input-handling\BasicInput.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\shapes\Triangle.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vectors\Vector2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vectors\Vector.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vectors\Vector3.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dependencies\include\glad\glad.h">
@@ -47,11 +59,23 @@
     <ClInclude Include="src\input-handling\BasicInput.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\shapes\Triangle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vectors\Vector2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vectors\Vector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vectors\Vector3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="resources\shaders\vertex_basic.shader" />
+    <None Include="resources\shaders\vertex_basic.glsl" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="resources\shaders\fragment_basic.shader" />
+    <Text Include="resources\shaders\fragment_basic.glsl" />
   </ItemGroup>
 </Project>

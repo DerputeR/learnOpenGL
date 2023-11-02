@@ -141,6 +141,10 @@
     <ClCompile Include="src\shader-loader\ShaderLoader.cpp" />
     <ClCompile Include="src\Application.cpp" />
     <ClCompile Include="src\glad.c" />
+    <ClCompile Include="src\shapes\Triangle.cpp" />
+    <ClCompile Include="src\vectors\Vector2.cpp" />
+    <ClCompile Include="src\vectors\Vector.cpp" />
+    <ClCompile Include="src\vectors\Vector3.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\input-handling\BasicInput.h" />
@@ -149,12 +153,16 @@
     <ClInclude Include="dependencies\include\GLFW\glfw3native.h" />
     <ClInclude Include="dependencies\include\KHR\khrplatform.h" />
     <ClInclude Include="src\shader-loader\ShaderLoader.h" />
+    <ClInclude Include="src\shapes\Triangle.h" />
+    <ClInclude Include="src\vectors\Vector2.h" />
+    <ClInclude Include="src\vectors\Vector.h" />
+    <ClInclude Include="src\vectors\Vector3.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="resources\shaders\vertex_basic.shader" />
+    <None Include="resources\shaders\vertex_basic.glsl" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="resources\shaders\fragment_basic.shader" />
+    <Text Include="resources\shaders\fragment_basic.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

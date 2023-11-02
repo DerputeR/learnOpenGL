@@ -8,15 +8,16 @@
 const int kDefaultWindowWidth = 800;
 const int kDefaultWindowHeight = 600;
 
-static std::string vertShaderPath = "resources/shaders/vertex_basic.shader";
-static std::string fragShaderPath = "resources/shaders/fragment_basic.shader";
+static std::string vertShaderPath = "resources/shaders/vertex_basic.glsl";
+static std::string fragShaderPath = "resources/shaders/fragment_basic.glsl";
+static std::string fragShaderPath2 = "resources/shaders/fragment_basic2.glsl";
 
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
 }
 
-std::vector<BasicInput::Key> keys{ {"quit", GLFW_KEY_ESCAPE}, {"toggleWireframe", GLFW_KEY_SPACE}};
+std::vector<BasicInput::Key> keys{ {"quit", GLFW_KEY_ESCAPE}, {"toggleWireframe", GLFW_KEY_SPACE} };
 
 // todo: figure out how to not be forced to pass a window pointer everywhere
 void PollInput(GLFWwindow* window, std::vector<BasicInput::Key>* keys) {
@@ -37,7 +38,8 @@ void ProcessInput(GLFWwindow* window, std::vector<BasicInput::Key>* keys) {
 			// built-in wireframe mode
 			// NOTE: must use GL_FRONT_AND_BACK in core profile
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		} else {
+		}
+		else {
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		}
 	}
@@ -84,6 +86,13 @@ int main() {
 		0.0f, -0.5f, 0.0f  // bottom
 	};
 
+	float vertices2[] = {
+		-0.5f, 0.5f, 0.0f, // left
+		0.5f, 0.5f, 0.0f,  // right
+		0.0f, 1.0f, 0.0f,  // top
+		0.0f, 0.0f, 0.0f  // bottom
+	};
+
 	// get into habit of drawing CCW
 	unsigned int indices[] = {
 		1, 2, 0,
@@ -92,14 +101,18 @@ int main() {
 
 	// Vertex buffer object
 	unsigned int VBO;
+	unsigned int VBO2;
 	glGenBuffers(1, &VBO);
+	glGenBuffers(1, &VBO2);
 	// Element buffer object
 	unsigned int EBO;
 	glGenBuffers(1, &EBO);
 	// Vertex array(attribute) object
 	unsigned int VAO;
+	unsigned int VAO2;
 	glGenVertexArrays(1, &VAO);
-	
+	glGenVertexArrays(1, &VAO2);
+
 	// bind VAO to start tracking state
 	glBindVertexArray(VAO);
 
@@ -117,20 +130,36 @@ int main() {
 	// enable attribute 0
 	glEnableVertexAttribArray(0);
 
+	// bind VAO to start tracking state
+	glBindVertexArray(VAO2);
 
-	// parse and prepare shader code
-	ShaderLoader::ShaderSources shaderSources = ShaderLoader::ParseShaderSources(vertShaderPath, fragShaderPath);
-
-	// compile, link, and validate shader program
-	unsigned int shaderProgram = ShaderLoader::CreateShaderProgram(shaderSources.vertShaderSrc, shaderSources.fragShaderSrc);
-
-	// activate shader program if successful
-	if (shaderProgram) {
-		glUseProgram(shaderProgram);
-	}
+	// bind VBO and copy vertices array to buffer
+	glBindBuffer(GL_ARRAY_BUFFER, VBO2);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices2), vertices2, GL_STATIC_DRAW);
+	// bind EBO and copy indices array to buffer
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	/* Set vertex attributes pointers.
+	Attribute (0) has (3) non-normalized(GL_FALSE) (GL_FLOAT) elements.
+	It starts at (0) byte offset, and repeats every (3 * sizeof(float)) bytes.
+	*/
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	// enable attribute 0
+	glEnableVertexAttribArray(0);
 
 	// unbind VAO to stop tracking state
 	glBindVertexArray(NULL);
+
+	// note: shaders are not part of VAO state
+
+
+	// parse and prepare shader code
+	ShaderLoader::ShaderSources shaderSources = ShaderLoader::ParseShaderSources(vertShaderPath, fragShaderPath);
+	ShaderLoader::ShaderSources shaderSources2 = ShaderLoader::ParseShaderSources(vertShaderPath, fragShaderPath2);
+
+	// compile, link, and validate shader program
+	unsigned int shaderProgram = ShaderLoader::CreateShaderProgram(shaderSources.vertShaderSrc, shaderSources.fragShaderSrc);
+	unsigned int shaderProgram2 = ShaderLoader::CreateShaderProgram(shaderSources2.vertShaderSrc, shaderSources2.fragShaderSrc);	
 
 	while (!glfwWindowShouldClose(window)) {
 		// input
@@ -141,7 +170,15 @@ int main() {
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 		
+		// activate shader program if successful
+		if (shaderProgram) {
+			glUseProgram(shaderProgram);
+		}
 		DrawTriangle(VAO);
+		if (shaderProgram2) {
+			glUseProgram(shaderProgram2);
+		}
+		DrawTriangle(VAO2);
 
 		// check and call events and swap buffers
 		glfwPollEvents();
