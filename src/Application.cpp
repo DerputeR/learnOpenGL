@@ -141,7 +141,7 @@ int main() {
 	while (!glfwWindowShouldClose(window)) {
 		time = glfwGetTime();
 		for (int i = 0; i < 3; i++) {
-			vertices[6 * i + 6] = 0.5f * (sin(time) + 1.0f);
+			vertices[6 * i + 5] = 0.5f * (sin(time) + 1.0f);
 		}
 
 		// input
