@@ -105,7 +105,8 @@ int main() {
 
 	// bind VBO and copy vertices array to buffer
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STREAM_DRAW);
+	//glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STREAM_DRAW);
+	 glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 	// bind EBO and copy indices array to buffer
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
@@ -140,13 +141,13 @@ int main() {
 
 	while (!glfwWindowShouldClose(window)) {
 		time = glfwGetTime();
-		for (int i = 0; i < 3; i++) {
-			vertices[6 * i + 1] += 0.00025f * (sin(time));
-		}
+		//for (int i = 0; i < 3; i++) {
+		//	vertices[6 * i + 1] += 0.00025f * (sin(time));
+		//}
 
-		glBindVertexArray(VAO);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
-		glBindVertexArray(NULL);
+		//glBindVertexArray(VAO);
+		//glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+		//glBindVertexArray(NULL);
 
 		// input
 		PollInput(window, &keys);
