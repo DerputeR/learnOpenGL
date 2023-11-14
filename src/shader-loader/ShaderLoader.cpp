@@ -4,6 +4,7 @@
 #include <sstream>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <errno.h>
 
 ShaderLoader::ShaderSources ShaderLoader::ParseCombinedShaderSource(const std::string& filepath) {
 	std::ifstream stream(filepath);
@@ -12,6 +13,11 @@ ShaderLoader::ShaderSources ShaderLoader::ParseCombinedShaderSource(const std::s
 
     ShaderType type = ShaderType::NONE;
 
+    stream.open(filepath, std::ios_base::in);
+    if (!stream.is_open()) {
+        std::cerr << "Error opening file at " << filepath;
+        perror(" ");
+    }
     while (getline(stream, line)) {
         // if we find #shader, determine what kind it is
         if (line.find("#shader") != std::string::npos) {
@@ -27,6 +33,10 @@ ShaderLoader::ShaderSources ShaderLoader::ParseCombinedShaderSource(const std::s
             }
         }
     }
+    if (stream.bad()) {
+        std::cerr << "Error while reading file at " << filepath;
+        perror(" ");
+    }
 
     return { stringStreams[(int) ShaderType::VERTEX].str(), stringStreams[(int)ShaderType::FRAGMENT].str() };
 }
@@ -36,13 +46,33 @@ ShaderLoader::ShaderSources ShaderLoader::ParseShaderSources(const std::string& 
 }
 
 std::string ShaderLoader::ReadShaderSource(const std::string& filepath) {
-    std::ifstream stream(filepath);
+    std::ifstream stream;
     std::string line;
     std::stringstream stringStream;
 
+    // todo: find out best way to read in text file
+    // ref: https://stackoverflow.com/questions/34464705/rdbuf-vs-getline-vs
+    // article on ifstream error detection : https://gehrcke.de/2011/06/reading-files-in-c-using-ifstream-dealing-correctly-with-badbit-failbit-eofbit-and-perror/
+    stream.open(filepath, std::ios_base::in);
+    if (!stream.is_open()) {
+        std::cerr << "Error opening file at " << filepath;
+        perror(" ");
+    }
     while (getline(stream, line)) {
         stringStream << line << '\n';
     }
+    // failbit can be set by getline if it cannot extract data
+    // this can often happen if the last char in a file is a lin delimiter
+    // only when bad bit is set will errno be updated and we know there's an exception
+    if (stream.bad()) {
+        std::string errorBuffer;
+        //size_t buffSize = strerrorlen_s();
+        // strerror is not threadsafe, but can't use strerror_s:
+        // msvc seems to be missing strerrorlen_s
+        std::cerr << "Error while reading file at " << filepath;
+        perror(" ");
+    }
+    //stream.close(); // not needed, destructor will call this automatically
     return stringStream.str();
 }
 
