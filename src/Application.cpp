@@ -4,13 +4,13 @@
 #include "input-handling/BasicInput.h"
 #include "shader-loader/ShaderLoader.h"
 #include <vector>
+#include "stb/stb_image.h"
 
 const int kDefaultWindowWidth = 800;
 const int kDefaultWindowHeight = 600;
 
 static std::string vertShaderPath = "resources/shaders/vertex_basic.glsl";
 static std::string fragShaderPath = "resources/shaders/fragment_basic.glsl";
-
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
@@ -79,15 +79,85 @@ int main() {
 
 	// temporary vertices for a diamond shape
 	float vertices[] = {
-		// x, y, z, r, g, b
-		-0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, // left
-		0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f,  // right
-		0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f,  // top
+		// x, y, z            // r, g, b          // u, v
+		 0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
+		 0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
+		-0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
+		-0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // top left 
 	};
+
+	/* Textures */
+	std::vector<unsigned int> textures{};
+	stbi_set_flip_vertically_on_load(true);
+	// Load image data
+	for (int i = 0; i < 2; i++) {
+		int width;
+		int height;
+		int nrChannels;
+		unsigned char* textureData;
+		GLint internalFormat;
+		GLenum format;
+		switch (i) {
+		case 0:
+			internalFormat = GL_RGB;
+			format = GL_RGB;
+			textureData = stbi_load("resources/textures/container.jpg", &width, &height, &nrChannels, 0);
+			break;
+		case 1:
+			internalFormat = GL_RGB;
+			format = GL_RGBA;
+			textureData = stbi_load("resources/textures/awesomeface.png", &width, &height, &nrChannels, 0);
+			break;
+		default:
+			internalFormat = GL_RGB;
+			format = GL_RGB;
+			textureData = stbi_load("resources/textures/bricktile.png", &width, &height, &nrChannels, 0);
+			break;
+		}
+
+		if (textureData) {
+			textures.push_back(0);
+			glGenTextures(1, &textures[i]);
+			glBindTexture(GL_TEXTURE_2D, textures[i]);
+
+			// texture wrapping
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+			// texture filtering
+			//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			// for using with mipmaps, which are ALWAYS smaller than base texture
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+			// Generate texture
+			glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, textureData);
+			glGenerateMipmap(GL_TEXTURE_2D);
+		}
+		else {
+			std::cerr << "Failed to load image!"  << std::endl;
+		}
+
+		// Free image data
+		stbi_image_free(textureData);
+
+	}
+
+	std::cout << "Generated textures with ids: ";
+	int textureCount = textures.size();
+	for (int i = 0; i < textureCount; i++) {
+		std::cout << textures[i];
+		if (i + 1 != textureCount) {
+			std::cout << ", ";
+		}
+	}
+	std::cout << std::endl;
+	
 
 	// get into habit of drawing CCW
 	unsigned int indices[] = {
-		1, 2, 0,
+		1, 0, 3,
+		3, 2, 1,
 	};
 
 	// Vertex buffer object
@@ -112,17 +182,23 @@ int main() {
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 	/* Set vertex attributes pointers.
 	Attribute (0) (x, y, z) has (3) non-normalized(GL_FALSE) (GL_FLOAT) elements.
-	It starts at (0) byte offset, and repeats every (6 * sizeof(float)) bytes.
+	It starts at (0) byte offset, and repeats every (8 * sizeof(float)) bytes.
 
 	Attribute (1) (r, g, b) has (3) non-normalized(GL_FALSE) (FL_FLOAT) elements.
-	It starts at (3 * sizeof(float)) byte offset, and repeats every (6 * sizeof(float)) bytes.
+	It starts at (3 * sizeof(float)) byte offset, and repeats every (8 * sizeof(float)) bytes.
+
+	Attribute (2) (u, v) has (2) non-normalized(GL_FALSE) (FL_FLOAT) elements.
+	It starts at (6 * sizeof(float)) byte offset, and repeats every (8 * sizeof(float)) bytes.
 	*/
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
 	// enable attribute 0 (x, y, z)
 	glEnableVertexAttribArray(0);
 	// enable attribute 1 (r, g, b)
 	glEnableVertexAttribArray(1);
+	// enable attribute 2 (u, v)
+	glEnableVertexAttribArray(2);
 
 	// unbind VAO to stop tracking state
 	glBindVertexArray(NULL);
@@ -135,9 +211,14 @@ int main() {
 
 	// compile, link, and validate shader program
 	unsigned int shaderProgram = ShaderLoader::CreateShaderProgram(shaderSources.vertShaderSrc, shaderSources.fragShaderSrc);	
+	glUseProgram(shaderProgram);
 
 	double time = glfwGetTime();
 	int timeUniformLocation = glGetUniformLocation(shaderProgram, "time");
+	int texture0UniformLocation = glGetUniformLocation(shaderProgram, "texture0");
+	int texture1UniformLocation = glGetUniformLocation(shaderProgram, "texture1");
+	glUniform1i(texture0UniformLocation, 0);
+	glUniform1i(texture1UniformLocation, 1);
 
 	while (!glfwWindowShouldClose(window)) {
 		time = glfwGetTime();
@@ -156,9 +237,17 @@ int main() {
 		// clear last render
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
+
+		// I originally did this part in the texture setup step so I'm not doing this right now.
+		// But if we had multiple objects and texture sets we wanted to render
+		// Then this would be the time to set them
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, textures[0]);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, textures[1]);
 		
 		// render
-		// draw triangle
+		// draw triangles
 		if (shaderProgram) {
 			glUseProgram(shaderProgram);
 			glUniform1f(timeUniformLocation, time);

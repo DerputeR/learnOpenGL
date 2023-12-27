@@ -39,6 +39,9 @@
     <ClCompile Include="src\vectors\Vector3.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\stb\stb_image.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dependencies\include\glad\glad.h">
@@ -71,11 +74,25 @@
     <ClInclude Include="src\vectors\Vector3.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\stb\stb_image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="resources\shaders\vertex_basic.glsl" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="resources\shaders\fragment_basic.glsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="resources\textures\bricktile.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resources\textures\container.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resources\textures\awesomeface.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>
