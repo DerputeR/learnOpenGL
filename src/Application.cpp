@@ -12,11 +12,22 @@ const int kDefaultWindowHeight = 600;
 static std::string vertShaderPath = "resources/shaders/vertex_basic.glsl";
 static std::string fragShaderPath = "resources/shaders/fragment_basic.glsl";
 
+static float percent = 0.0f;
+
+static double lastTime = 0.0;
+static double currentTime = 0.0;
+double deltaTime = 0.0;
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
 }
 
-std::vector<BasicInput::Key> keys{ {"quit", GLFW_KEY_ESCAPE}, {"toggleWireframe", GLFW_KEY_SPACE} };
+std::vector<BasicInput::Key> keys{
+	{"quit", GLFW_KEY_ESCAPE},
+	{"toggleWireframe", GLFW_KEY_SPACE},
+	{"increasePercent", GLFW_KEY_UP},
+	{"decreasePercent", GLFW_KEY_DOWN}
+};
 
 // todo: figure out how to not be forced to pass a window pointer everywhere
 void PollInput(GLFWwindow* window, std::vector<BasicInput::Key>* keys) {
@@ -27,11 +38,11 @@ void PollInput(GLFWwindow* window, std::vector<BasicInput::Key>* keys) {
 
 // todo: give keys an associated convar/action it can execute on process, which will pass its state so that the action can determine how it behaves
 void ProcessInput(GLFWwindow* window, std::vector<BasicInput::Key>* keys) {
-	if (keys->at(0).KeyJustPressed()) {
+	if ((*keys)[0].KeyJustPressed()) {
 		glfwSetWindowShouldClose(window, true);
 	}
 	static bool wireframeEnabled = 0;
-	if (keys->at(1).KeyJustPressed()) {
+	if ((*keys)[1].KeyJustPressed()) {
 		wireframeEnabled = !wireframeEnabled;
 		if (wireframeEnabled) {
 			// built-in wireframe mode
@@ -41,6 +52,14 @@ void ProcessInput(GLFWwindow* window, std::vector<BasicInput::Key>* keys) {
 		else {
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		}
+	}
+	if ((*keys)[2].KeyIsDown()) {
+		percent += 1.0f * deltaTime;
+		percent = std::min(1.0f, percent);
+	}
+	if ((*keys)[3].KeyIsDown()) {
+		percent -= 1.0f * deltaTime;
+		percent = std::max(0.0f, percent);
 	}
 }
 
@@ -104,7 +123,7 @@ int main() {
 			textureData = stbi_load("resources/textures/container.jpg", &width, &height, &nrChannels, 0);
 			break;
 		case 1:
-			internalFormat = GL_RGB;
+			internalFormat = GL_RGBA;
 			format = GL_RGBA;
 			textureData = stbi_load("resources/textures/awesomeface.png", &width, &height, &nrChannels, 0);
 			break;
@@ -213,15 +232,18 @@ int main() {
 	unsigned int shaderProgram = ShaderLoader::CreateShaderProgram(shaderSources.vertShaderSrc, shaderSources.fragShaderSrc);	
 	glUseProgram(shaderProgram);
 
-	double time = glfwGetTime();
 	int timeUniformLocation = glGetUniformLocation(shaderProgram, "time");
+	int percentUniformLocation = glGetUniformLocation(shaderProgram, "percent");
 	int texture0UniformLocation = glGetUniformLocation(shaderProgram, "texture0");
 	int texture1UniformLocation = glGetUniformLocation(shaderProgram, "texture1");
 	glUniform1i(texture0UniformLocation, 0);
 	glUniform1i(texture1UniformLocation, 1);
 
 	while (!glfwWindowShouldClose(window)) {
-		time = glfwGetTime();
+		lastTime = currentTime;
+		currentTime = glfwGetTime();
+		deltaTime = currentTime - lastTime;
+
 		//for (int i = 0; i < 3; i++) {
 		//	vertices[6 * i + 1] += 0.00025f * (sin(time));
 		//}
@@ -250,7 +272,8 @@ int main() {
 		// draw triangles
 		if (shaderProgram) {
 			glUseProgram(shaderProgram);
-			glUniform1f(timeUniformLocation, time);
+			glUniform1f(timeUniformLocation, currentTime);
+			glUniform1f(percentUniformLocation, percent);
 		}
 		DrawTriangle(VAO);
 
