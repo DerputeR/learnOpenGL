@@ -5,6 +5,9 @@
 #include "shader-loader/ShaderLoader.h"
 #include <vector>
 #include "stb/stb_image.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 const int kDefaultWindowWidth = 800;
 const int kDefaultWindowHeight = 600;
@@ -18,15 +21,37 @@ static double lastTime = 0.0;
 static double currentTime = 0.0;
 double deltaTime = 0.0;
 
+static glm::mat4 transform = glm::mat4{ 1.0f }; // single arg appears to just scale the identity matrix; no arg gives null (all 0s) matrix
+static float rotationDeg = 0;
+static glm::vec3 translation{ 0.0f, -0.3f, 0.0f };
+static glm::vec3 scale{ 0.5f, 0.5f, 0.5f };
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
 }
 
+void UpdateTransformMatrix() {
+	// due to the nature of matrix multiplication, the first transformation we want must come last
+	// we want to first scale by 0.5, then rotate 90 degrees CCW, then translate
+	transform = glm::mat4{ 1.0f };
+	transform = glm::translate(transform, translation);
+	transform = glm::rotate(transform, glm::radians(rotationDeg), glm::vec3{ 0.0, 0.0, 1.0 });
+	transform = glm::scale(transform, scale);
+}
+
 std::vector<BasicInput::Key> keys{
 	{"quit", GLFW_KEY_ESCAPE},
-	{"toggleWireframe", GLFW_KEY_SPACE},
+	{"toggleWireframe", GLFW_KEY_TAB},
 	{"increasePercent", GLFW_KEY_UP},
-	{"decreasePercent", GLFW_KEY_DOWN}
+	{"decreasePercent", GLFW_KEY_DOWN},
+	{"rotateCCW", GLFW_KEY_LEFT},
+	{"rotateCW", GLFW_KEY_RIGHT},
+	{"moveUp", GLFW_KEY_W},
+	{"moveDown", GLFW_KEY_S},
+	{"moveLeft", GLFW_KEY_A},
+	{"moveRight", GLFW_KEY_D},
+	{"scaleUp", GLFW_KEY_SPACE},
+	{"sacleDown", GLFW_KEY_LEFT_SHIFT},
 };
 
 // todo: figure out how to not be forced to pass a window pointer everywhere
@@ -60,6 +85,38 @@ void ProcessInput(GLFWwindow* window, std::vector<BasicInput::Key>* keys) {
 	if ((*keys)[3].KeyIsDown()) {
 		percent -= 1.0f * deltaTime;
 		percent = std::max(0.0f, percent);
+	}
+	if ((*keys)[4].KeyIsDown()) {
+		rotationDeg += 90.0f * deltaTime;
+		UpdateTransformMatrix();
+	}
+	if ((*keys)[5].KeyIsDown()) {
+		rotationDeg -= 90.0f * deltaTime;
+		UpdateTransformMatrix();
+	}
+	if ((*keys)[6].KeyIsDown()) {
+		translation.y += 1.0f * deltaTime;
+		UpdateTransformMatrix();
+	}
+	if ((*keys)[7].KeyIsDown()) {
+		translation.y -= 1.0f * deltaTime;
+		UpdateTransformMatrix();
+	}
+	if ((*keys)[8].KeyIsDown()) {
+		translation.x -= 1.0f * deltaTime;
+		UpdateTransformMatrix();
+	}
+	if ((*keys)[9].KeyIsDown()) {
+		translation.x += 1.0f * deltaTime;
+		UpdateTransformMatrix();
+	}
+	if ((*keys)[10].KeyIsDown()) {
+		scale += 1.0f * deltaTime;
+		UpdateTransformMatrix();
+	}
+	if ((*keys)[11].KeyIsDown()) {
+		scale -= 1.0f * deltaTime;
+		UpdateTransformMatrix();
 	}
 }
 
@@ -232,12 +289,24 @@ int main() {
 	unsigned int shaderProgram = ShaderLoader::CreateShaderProgram(shaderSources.vertShaderSrc, shaderSources.fragShaderSrc);	
 	glUseProgram(shaderProgram);
 
-	int timeUniformLocation = glGetUniformLocation(shaderProgram, "time");
-	int percentUniformLocation = glGetUniformLocation(shaderProgram, "percent");
-	int texture0UniformLocation = glGetUniformLocation(shaderProgram, "texture0");
-	int texture1UniformLocation = glGetUniformLocation(shaderProgram, "texture1");
+	unsigned int timeUniformLocation = glGetUniformLocation(shaderProgram, "time");
+	unsigned int percentUniformLocation = glGetUniformLocation(shaderProgram, "percent");
+	unsigned int texture0UniformLocation = glGetUniformLocation(shaderProgram, "texture0");
+	unsigned int texture1UniformLocation = glGetUniformLocation(shaderProgram, "texture1");
+	unsigned int transformUniformLocation = glGetUniformLocation(shaderProgram, "transform");
 	glUniform1i(texture0UniformLocation, 0);
 	glUniform1i(texture1UniformLocation, 1);
+
+	// GLM vector/matrix test
+	glm::vec4 v0{ 1.0f, 0.0f, 0.0f, 1.0f };
+
+	UpdateTransformMatrix();
+
+	glm::vec4 v1 = transform * v0;
+	std::cout << "(" << v0.x << ", " << v0.y << ", " << v0.z << ")" << std::endl;
+	std::cout << "(" << v1.x << ", " << v1.y << ", " << v1.z << ")" << std::endl;
+
+	glUniformMatrix4fv(transformUniformLocation, 1, GL_FALSE, glm::value_ptr(transform));
 
 	while (!glfwWindowShouldClose(window)) {
 		lastTime = currentTime;
@@ -274,6 +343,7 @@ int main() {
 			glUseProgram(shaderProgram);
 			glUniform1f(timeUniformLocation, currentTime);
 			glUniform1f(percentUniformLocation, percent);
+			glUniformMatrix4fv(transformUniformLocation, 1, GL_FALSE, glm::value_ptr(transform));
 		}
 		DrawTriangle(VAO);
 
