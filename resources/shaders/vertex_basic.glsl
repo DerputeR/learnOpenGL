@@ -12,7 +12,7 @@ out vec3 vertexColor;
 out vec2 texCoord;
 
 void main() {
-	gl_Position = projMatrix * viewMatrix * modelMatrix * transform * vec4(aPos.xyz, 1.0f);
+	gl_Position = projMatrix * viewMatrix * transform * modelMatrix * vec4(aPos.xyz, 1.0f);
 	vertexColor = aColor;
 	texCoord = aTexCoord;
 }

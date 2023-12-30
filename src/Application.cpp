@@ -34,18 +34,25 @@ static glm::vec3 translation{ 0.0f, -0.3f, 0.0f };
 static glm::vec3 scale{ 0.5f, 0.5f, 0.5f };
 
 static float vFov = 90.0f;
-static glm::mat4 orthoMatrix = glm::ortho(-50.0f, 50.0f, -50.0f, 50.0f, 0.0f, 100.0f);
+static glm::mat4 orthoMatrix = glm::ortho(
+	-5.0f * 0.5f * ((float)windowWidth / (float)windowHeight), // left
+	5.0f * 0.5f * ((float)windowWidth / (float)windowHeight),  // right
+	-2.5f, // bottom
+	2.5f,  // top
+	-10.0f,   // near
+	10.0f  // far
+);
 static glm::mat4 perspMatrix = glm::perspective(glm::radians(vFov), (float) windowWidth / (float) windowHeight, 0.1f, 100.0f);
 
 void UpdateProjectionMatrix() {
 	perspMatrix = glm::perspective(glm::radians(vFov), (float)windowWidth / (float)windowHeight, 0.1f, 100.0f);
 	orthoMatrix = glm::ortho(
-		-50.0f * 0.5f * ((float)windowWidth / (float)windowHeight), // left
-		50.0f * 0.5f * ((float)windowWidth / (float)windowHeight),  // right
-		-50.0f, // bottom
-		50.0f,  // top
-		0.0f,   // near
-		100.0f  // far
+		-5.0f * 0.5f * ((float)windowWidth / (float)windowHeight), // left
+		5.0f * 0.5f * ((float)windowWidth / (float)windowHeight),  // right
+		-2.5f, // bottom
+		2.5f,  // top
+		-10.0f,// near
+		10.0f  // far
 	);
 }
 
@@ -76,9 +83,15 @@ void UpdateTransformMatrix() {
 	transform = glm::translate(transform, translation);
 	transform = glm::rotate(transform, glm::radians(rotationDeg), glm::vec3{ 0.0, 0.0, 1.0 });
 	transform = glm::scale(transform, scale);
+}
 
-	modelMatrix = glm::rotate(glm::mat4{ 1.0f }, glm::radians(-55.0f), glm::vec3{1.0f, 0.0f, 0.0f});
+void UpdateModelMatrix() {
+	modelMatrix = glm::rotate(glm::mat4{ 1.0f }, (float) currentTime * glm::radians(50.0f), glm::vec3{ 0.5f, 1.0f, 0.0f });
+}
+
+void UpdateViewMatrix() {
 	viewMatrix = glm::translate(glm::mat4{ 1.0f }, glm::vec3{ 0.0f, 0.0f, -1.0f }); // moving camera backwards (3 units in +z) is = moving world forward (3 units in -z)
+
 }
 
 std::vector<BasicInput::Key> keys{
@@ -137,19 +150,19 @@ void ProcessInput(GLFWwindow* window, std::vector<BasicInput::Key>* keys) {
 		UpdateTransformMatrix();
 	}
 	if ((*keys)[6].KeyIsDown()) {
-		translation.y += 1.0f * deltaTime;
+		translation.y += 1.0f * deltaTime * scale.y;
 		UpdateTransformMatrix();
 	}
 	if ((*keys)[7].KeyIsDown()) {
-		translation.y -= 1.0f * deltaTime;
+		translation.y -= 1.0f * deltaTime * scale.y;
 		UpdateTransformMatrix();
 	}
 	if ((*keys)[8].KeyIsDown()) {
-		translation.x -= 1.0f * deltaTime;
+		translation.x -= 1.0f * deltaTime * scale.x;
 		UpdateTransformMatrix();
 	}
 	if ((*keys)[9].KeyIsDown()) {
-		translation.x += 1.0f * deltaTime;
+		translation.x += 1.0f * deltaTime * scale.x;
 		UpdateTransformMatrix();
 	}
 	if ((*keys)[10].KeyIsDown()) {
@@ -162,9 +175,10 @@ void ProcessInput(GLFWwindow* window, std::vector<BasicInput::Key>* keys) {
 	}
 }
 
-void DrawTriangle(unsigned int vao) {
+void DrawTriangle(unsigned int vao, unsigned int triCount) {
 	glBindVertexArray(vao);
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	//glDrawElements(GL_TRIANGLES, triCount, GL_UNSIGNED_INT, 0);
+	glDrawArrays(GL_TRIANGLES, 0, triCount);
 	glBindVertexArray(NULL);
 }
 
@@ -196,13 +210,49 @@ int main() {
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	glfwSetWindowIconifyCallback(window, window_iconify_callback);
 
-	// temporary vertices for a diamond shape
+	// temporary vertices for a CUBE
 	float vertices[] = {
-		// x, y, z            // r, g, b          // u, v
-		 0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
-		 0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
-		-0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
-		-0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // top left 
+		-0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
+		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
+
+		-0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
+		-0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
+
+		-0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
+
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
+
+		-0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
+
+		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f
 	};
 
 	/* Textures */
@@ -283,8 +333,8 @@ int main() {
 	unsigned int VBO;
 	glGenBuffers(1, &VBO);
 	// Element buffer object
-	unsigned int EBO;
-	glGenBuffers(1, &EBO);
+	//unsigned int EBO;
+	//glGenBuffers(1, &EBO);
 	// Vertex array(attribute) object
 	unsigned int VAO;
 	glGenVertexArrays(1, &VAO);
@@ -295,10 +345,13 @@ int main() {
 	// bind VBO and copy vertices array to buffer
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	//glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STREAM_DRAW);
-	 glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-	// bind EBO and copy indices array to buffer
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	// ! disabled for now due to headache with cube indices
+	//// bind EBO and copy indices array to buffer
+	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
 	/* Set vertex attributes pointers.
 	Attribute (0) (x, y, z) has (3) non-normalized(GL_FALSE) (GL_FLOAT) elements.
 	It starts at (0) byte offset, and repeats every (8 * sizeof(float)) bytes.
@@ -354,6 +407,9 @@ int main() {
 
 	glUniformMatrix4fv(transformUniformLocation, 1, GL_FALSE, glm::value_ptr(transform));
 
+	glEnable(GL_DEPTH_TEST);
+
+
 	while (!glfwWindowShouldClose(window)) {
 		lastTime = currentTime;
 		currentTime = glfwGetTime();
@@ -371,9 +427,13 @@ int main() {
 		PollInput(window, &keys);
 		ProcessInput(window, &keys);
 
+		// update matrices
+		UpdateModelMatrix();
+		UpdateViewMatrix();
+
 		// clear last render
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// I originally did this part in the texture setup step so I'm not doing this right now.
 		// But if we had multiple objects and texture sets we wanted to render
@@ -392,9 +452,10 @@ int main() {
 			glUniformMatrix4fv(transformUniformLocation, 1, GL_FALSE, glm::value_ptr(transform));
 			glUniformMatrix4fv(modelMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(modelMatrix));
 			glUniformMatrix4fv(viewMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(viewMatrix));
-			glUniformMatrix4fv(projMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(perspMatrix));
+			glUniformMatrix4fv(projMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(orthoMatrix));
 		}
-		DrawTriangle(VAO);
+		//DrawTriangle(VAO, sizeof(indices) / sizeof(indices[0]));
+		DrawTriangle(VAO, 36);
 
 		// check and call events and swap buffers
 		glfwPollEvents();
