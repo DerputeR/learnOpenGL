@@ -34,24 +34,19 @@ static glm::vec3 translation{ 0.0f, -0.3f, 0.0f };
 static glm::vec3 scale{ 0.5f, 0.5f, 0.5f };
 
 static float vFov = 90.0f;
-static glm::mat4 orthoMatrix = glm::ortho(
-	-5.0f * 0.5f * ((float)windowWidth / (float)windowHeight), // left
-	5.0f * 0.5f * ((float)windowWidth / (float)windowHeight),  // right
-	-2.5f, // bottom
-	2.5f,  // top
-	-10.0f,   // near
-	10.0f  // far
-);
-static glm::mat4 perspMatrix = glm::perspective(glm::radians(vFov), (float) windowWidth / (float) windowHeight, 0.1f, 100.0f);
+static glm::mat4 orthoMatrix{ };
+static glm::mat4 perspMatrix{ };
+
+bool usePerspective = true;
 
 void UpdateProjectionMatrix() {
 	perspMatrix = glm::perspective(glm::radians(vFov), (float)windowWidth / (float)windowHeight, 0.1f, 100.0f);
 	orthoMatrix = glm::ortho(
-		-5.0f * 0.5f * ((float)windowWidth / (float)windowHeight), // left
-		5.0f * 0.5f * ((float)windowWidth / (float)windowHeight),  // right
-		-2.5f, // bottom
-		2.5f,  // top
-		-10.0f,// near
+		-1.0f * ((float)windowWidth / (float)windowHeight), // left
+		1.0f * ((float)windowWidth / (float)windowHeight),  // right
+		-1.0f, // bottom
+		1.0f,  // top
+		-10.0f,   // near
 		10.0f  // far
 	);
 }
@@ -107,6 +102,7 @@ std::vector<BasicInput::Key> keys{
 	{"moveRight", GLFW_KEY_D},
 	{"scaleUp", GLFW_KEY_SPACE},
 	{"sacleDown", GLFW_KEY_LEFT_SHIFT},
+	{"togglePerspective", GLFW_KEY_F5},
 };
 
 // todo: figure out how to not be forced to pass a window pointer everywhere
@@ -150,19 +146,19 @@ void ProcessInput(GLFWwindow* window, std::vector<BasicInput::Key>* keys) {
 		UpdateTransformMatrix();
 	}
 	if ((*keys)[6].KeyIsDown()) {
-		translation.y += 1.0f * deltaTime * scale.y;
+		translation.y += 2.0f * deltaTime;
 		UpdateTransformMatrix();
 	}
 	if ((*keys)[7].KeyIsDown()) {
-		translation.y -= 1.0f * deltaTime * scale.y;
+		translation.y -= 2.0f * deltaTime;
 		UpdateTransformMatrix();
 	}
 	if ((*keys)[8].KeyIsDown()) {
-		translation.x -= 1.0f * deltaTime * scale.x;
+		translation.x -= 2.0f * deltaTime;
 		UpdateTransformMatrix();
 	}
 	if ((*keys)[9].KeyIsDown()) {
-		translation.x += 1.0f * deltaTime * scale.x;
+		translation.x += 2.0f * deltaTime;
 		UpdateTransformMatrix();
 	}
 	if ((*keys)[10].KeyIsDown()) {
@@ -172,6 +168,9 @@ void ProcessInput(GLFWwindow* window, std::vector<BasicInput::Key>* keys) {
 	if ((*keys)[11].KeyIsDown()) {
 		scale -= 1.0f * deltaTime;
 		UpdateTransformMatrix();
+	}
+	if ((*keys)[12].KeyJustPressed()) {
+		usePerspective = !usePerspective;
 	}
 }
 
@@ -296,7 +295,7 @@ int main() {
 			// texture filtering
 			//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 			// for using with mipmaps, which are ALWAYS smaller than base texture
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 			// Generate texture
@@ -400,12 +399,12 @@ int main() {
 	glm::vec4 v0{ 1.0f, 0.0f, 0.0f, 1.0f };
 
 	UpdateTransformMatrix();
+	UpdateProjectionMatrix();
 
 	glm::vec4 v1 = transform * v0;
 	std::cout << "(" << v0.x << ", " << v0.y << ", " << v0.z << ")" << std::endl;
 	std::cout << "(" << v1.x << ", " << v1.y << ", " << v1.z << ")" << std::endl;
 
-	glUniformMatrix4fv(transformUniformLocation, 1, GL_FALSE, glm::value_ptr(transform));
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -452,7 +451,12 @@ int main() {
 			glUniformMatrix4fv(transformUniformLocation, 1, GL_FALSE, glm::value_ptr(transform));
 			glUniformMatrix4fv(modelMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(modelMatrix));
 			glUniformMatrix4fv(viewMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(viewMatrix));
-			glUniformMatrix4fv(projMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(orthoMatrix));
+			if (usePerspective) {
+				glUniformMatrix4fv(projMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(perspMatrix));
+			}
+			else {
+				glUniformMatrix4fv(projMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(orthoMatrix));
+			}
 		}
 		//DrawTriangle(VAO, sizeof(indices) / sizeof(indices[0]));
 		DrawTriangle(VAO, 36);
