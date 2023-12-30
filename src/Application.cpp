@@ -12,6 +12,9 @@
 const int kDefaultWindowWidth = 800;
 const int kDefaultWindowHeight = 600;
 
+int windowWidth = kDefaultWindowWidth;
+int windowHeight = kDefaultWindowHeight;
+
 static std::string vertShaderPath = "resources/shaders/vertex_basic.glsl";
 static std::string fragShaderPath = "resources/shaders/fragment_basic.glsl";
 
@@ -21,13 +24,49 @@ static double lastTime = 0.0;
 static double currentTime = 0.0;
 double deltaTime = 0.0;
 
-static glm::mat4 transform = glm::mat4{ 1.0f }; // single arg appears to just scale the identity matrix; no arg gives null (all 0s) matrix
+// matrices
+static glm::mat4 modelMatrix{ 1.0f };
+static glm::mat4 viewMatrix{ 1.0f };
+
+static glm::mat4 transform { 1.0f }; // single arg appears to just scale the identity matrix; no arg gives null (all 0s) matrix
 static float rotationDeg = 0;
 static glm::vec3 translation{ 0.0f, -0.3f, 0.0f };
 static glm::vec3 scale{ 0.5f, 0.5f, 0.5f };
 
+static float vFov = 90.0f;
+static glm::mat4 orthoMatrix = glm::ortho(-50.0f, 50.0f, -50.0f, 50.0f, 0.0f, 100.0f);
+static glm::mat4 perspMatrix = glm::perspective(glm::radians(vFov), (float) windowWidth / (float) windowHeight, 0.1f, 100.0f);
+
+void UpdateProjectionMatrix() {
+	perspMatrix = glm::perspective(glm::radians(vFov), (float)windowWidth / (float)windowHeight, 0.1f, 100.0f);
+	orthoMatrix = glm::ortho(
+		-50.0f * 0.5f * ((float)windowWidth / (float)windowHeight), // left
+		50.0f * 0.5f * ((float)windowWidth / (float)windowHeight),  // right
+		-50.0f, // bottom
+		50.0f,  // top
+		0.0f,   // near
+		100.0f  // far
+	);
+}
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
+	if (width == 0 || height == 0) {
+		std::cout << "Ignoring " << width << "x" << height << " resize" << std::endl;
+		return;
+	}
+	windowWidth = width;
+	windowHeight = height;
 	glViewport(0, 0, width, height);
+	UpdateProjectionMatrix();
+}
+
+void window_iconify_callback(GLFWwindow* window, int iconified) {
+	if (iconified) {
+		std::cout << "Window minimized" << std::endl;
+	}
+	else {
+		std::cout << "Window restored" << std::endl;
+	}
 }
 
 void UpdateTransformMatrix() {
@@ -37,6 +76,9 @@ void UpdateTransformMatrix() {
 	transform = glm::translate(transform, translation);
 	transform = glm::rotate(transform, glm::radians(rotationDeg), glm::vec3{ 0.0, 0.0, 1.0 });
 	transform = glm::scale(transform, scale);
+
+	modelMatrix = glm::rotate(glm::mat4{ 1.0f }, glm::radians(-55.0f), glm::vec3{1.0f, 0.0f, 0.0f});
+	viewMatrix = glm::translate(glm::mat4{ 1.0f }, glm::vec3{ 0.0f, 0.0f, -1.0f }); // moving camera backwards (3 units in +z) is = moving world forward (3 units in -z)
 }
 
 std::vector<BasicInput::Key> keys{
@@ -135,7 +177,7 @@ int main() {
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	//glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // Needed for MacOS
 
-	GLFWwindow* window = glfwCreateWindow(kDefaultWindowWidth, kDefaultWindowHeight, "learnOpenGL", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(windowWidth, windowHeight, "learnOpenGL", NULL, NULL);
 	if (window == NULL) {
 		std::cout << "Failed to generate GLFW window!" << std::endl;
 		glfwTerminate();
@@ -149,9 +191,10 @@ int main() {
 		return -1;
 	}
 
-	glViewport(0, 0, kDefaultWindowWidth, kDefaultWindowHeight);
+	glViewport(0, 0, windowWidth, windowHeight);
 
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	glfwSetWindowIconifyCallback(window, window_iconify_callback);
 
 	// temporary vertices for a diamond shape
 	float vertices[] = {
@@ -294,6 +337,9 @@ int main() {
 	unsigned int texture0UniformLocation = glGetUniformLocation(shaderProgram, "texture0");
 	unsigned int texture1UniformLocation = glGetUniformLocation(shaderProgram, "texture1");
 	unsigned int transformUniformLocation = glGetUniformLocation(shaderProgram, "transform");
+	unsigned int modelMatrixUniformLocation = glGetUniformLocation(shaderProgram, "modelMatrix");
+	unsigned int viewMatrixUniformLocation = glGetUniformLocation(shaderProgram, "viewMatrix");
+	unsigned int projMatrixUniformLocation = glGetUniformLocation(shaderProgram, "projMatrix");
 	glUniform1i(texture0UniformLocation, 0);
 	glUniform1i(texture1UniformLocation, 1);
 
@@ -344,6 +390,9 @@ int main() {
 			glUniform1f(timeUniformLocation, currentTime);
 			glUniform1f(percentUniformLocation, percent);
 			glUniformMatrix4fv(transformUniformLocation, 1, GL_FALSE, glm::value_ptr(transform));
+			glUniformMatrix4fv(modelMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+			glUniformMatrix4fv(viewMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(viewMatrix));
+			glUniformMatrix4fv(projMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(perspMatrix));
 		}
 		DrawTriangle(VAO);
 
