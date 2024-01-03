@@ -39,6 +39,23 @@ static glm::mat4 perspMatrix{ };
 
 bool usePerspective = true;
 
+bool cursorLocked = false;
+float sensitivity = 1.0f;
+float m_pitch = 0.022f;
+float m_yaw = 0.022f;
+double mouseX = 0.0;
+double mouseY = 0.0;
+
+// camera
+static glm::vec3 camPosition{ 0.0f, 0.0f, 1.0f };
+static glm::vec3 camRotation{ 0.0f, 0.0f, 0.0f };
+
+// https://stackoverflow.com/questions/9323903/most-efficient-elegant-way-to-clip-a-number
+template <typename T>
+T clip(const T& n, const T& lower, const T& upper) {
+	return std::max(lower, std::min(n, upper));
+}
+
 void UpdateProjectionMatrix() {
 	perspMatrix = glm::perspective(glm::radians(vFov), (float)windowWidth / (float)windowHeight, 0.1f, 100.0f);
 	orthoMatrix = glm::ortho(
@@ -85,8 +102,10 @@ void UpdateModelMatrix() {
 }
 
 void UpdateViewMatrix() {
-	viewMatrix = glm::translate(glm::mat4{ 1.0f }, glm::vec3{ 0.0f, 0.0f, -1.0f }); // moving camera backwards (3 units in +z) is = moving world forward (3 units in -z)
-
+	viewMatrix = glm::mat4{ 1.0f };
+	viewMatrix = glm::rotate(viewMatrix, glm::radians(camRotation.y), glm::vec3{0.0f, 1.0f, 0.0f});
+	viewMatrix = glm::rotate(viewMatrix, glm::radians(camRotation.x), glm::vec3{1.0f, 0.0f, 0.0f});
+	viewMatrix = glm::translate(viewMatrix, -camPosition); // moving camera backwards (3 units in +z) is = moving world forward (3 units in -z)
 }
 
 std::vector<BasicInput::Key> keys{
@@ -100,8 +119,8 @@ std::vector<BasicInput::Key> keys{
 	{"moveDown", GLFW_KEY_S},
 	{"moveLeft", GLFW_KEY_A},
 	{"moveRight", GLFW_KEY_D},
-	{"scaleUp", GLFW_KEY_SPACE},
-	{"sacleDown", GLFW_KEY_LEFT_SHIFT},
+	{"scaleUp", GLFW_KEY_EQUAL},
+	{"sacleDown", GLFW_KEY_MINUS},
 	{"togglePerspective", GLFW_KEY_F5},
 	{"toggleCursorLock", GLFW_KEY_C},
 };
@@ -110,6 +129,19 @@ std::vector<BasicInput::Key> keys{
 void PollInput(GLFWwindow* window, std::vector<BasicInput::Key>* keys) {
 	for (int i = 0; i < keys->size(); i++) {
 		keys->at(i).updateState(glfwGetKey(window, keys->at(i).keycode));
+	}
+	glfwGetCursorPos(window, &mouseX, &mouseY);
+	if (cursorLocked) {
+		glfwSetCursorPos(window, 0, 0);
+		camRotation.x += mouseY * sensitivity * m_pitch;
+		camRotation.y += mouseX * sensitivity * m_yaw;
+		camRotation.x = clip(camRotation.x, -89.0f, 89.0f);
+		while (camRotation.y > 360.0f) {
+			camRotation.y -= 360.0f;
+		}
+		while (camRotation.y < 0) {
+			camRotation.y += 360.0f;
+		}
 	}
 }
 
@@ -173,16 +205,19 @@ void ProcessInput(GLFWwindow* window, std::vector<BasicInput::Key>* keys) {
 	if ((*keys)[12].KeyJustPressed()) {
 		usePerspective = !usePerspective;
 	}
-	static bool cursorLocked = false;
 	if ((*keys)[13].KeyJustPressed()) {
 		cursorLocked = !cursorLocked;
 		if (cursorLocked) {
+			glfwSetCursorPos(window, windowWidth / 2, windowHeight / 2);
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			mouseX = 0.0f;
+			mouseY = 0.0f;
 		}
 		else {
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 		}
 	}
+	std::cout << "x: " << mouseX << ", y: " << mouseY << "       \n" << "cam rotation: " << camRotation.x << " " << camRotation.y << "     \033[A\r";
 }
 
 void DrawTriangle(unsigned int vao, unsigned int triCount) {
@@ -219,6 +254,11 @@ int main() {
 
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	glfwSetWindowIconifyCallback(window, window_iconify_callback);
+
+	if (glfwRawMouseMotionSupported()) {
+		glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+		std::cout << "Raw input is supported, enabling" << std::endl;
+	}
 
 	// temporary vertices for a CUBE
 	float vertices[] = {
