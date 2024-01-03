@@ -103,6 +103,7 @@ std::vector<BasicInput::Key> keys{
 	{"scaleUp", GLFW_KEY_SPACE},
 	{"sacleDown", GLFW_KEY_LEFT_SHIFT},
 	{"togglePerspective", GLFW_KEY_F5},
+	{"toggleCursorLock", GLFW_KEY_C},
 };
 
 // todo: figure out how to not be forced to pass a window pointer everywhere
@@ -171,6 +172,16 @@ void ProcessInput(GLFWwindow* window, std::vector<BasicInput::Key>* keys) {
 	}
 	if ((*keys)[12].KeyJustPressed()) {
 		usePerspective = !usePerspective;
+	}
+	static bool cursorLocked = false;
+	if ((*keys)[13].KeyJustPressed()) {
+		cursorLocked = !cursorLocked;
+		if (cursorLocked) {
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		}
+		else {
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		}
 	}
 }
 
