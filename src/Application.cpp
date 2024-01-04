@@ -8,6 +8,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/norm.hpp>
 
 const int kDefaultWindowWidth = 800;
 const int kDefaultWindowHeight = 600;
@@ -46,9 +47,19 @@ float m_yaw = 0.022f;
 double mouseX = 0.0;
 double mouseY = 0.0;
 
+float moveSpeed = 1.0f;
+static glm::vec3 velocity{ 0.0f, 0.0f, 0.0f };
+static float fMove = 0.0f;
+static float sMove = 0.0f;
+static float vMove = 0.0f;
+
+
 // camera
 static glm::vec3 camPosition{ 0.0f, 0.0f, 1.0f };
 static glm::vec3 camRotation{ 0.0f, 0.0f, 0.0f };
+static glm::vec3 camView_forward{ 0.0f, 0.0f, -1.0f };
+static glm::vec3 camView_right{ 1.0f, 0.0f, 0.0f };
+static glm::vec3 camView_up{ 0.0f, 1.0f, 0.0f };
 
 // https://stackoverflow.com/questions/9323903/most-efficient-elegant-way-to-clip-a-number
 template <typename T>
@@ -101,10 +112,22 @@ void UpdateModelMatrix() {
 	modelMatrix = glm::rotate(glm::mat4{ 1.0f }, (float) currentTime * glm::radians(50.0f), glm::vec3{ 0.5f, 1.0f, 0.0f });
 }
 
-void UpdateViewMatrix() {
+void UpdateViewAngles() {
 	viewMatrix = glm::mat4{ 1.0f };
 	viewMatrix = glm::rotate(viewMatrix, glm::radians(camRotation.y), glm::vec3{0.0f, 1.0f, 0.0f});
 	viewMatrix = glm::rotate(viewMatrix, glm::radians(camRotation.x), glm::vec3{1.0f, 0.0f, 0.0f});
+	//viewMatrix = glm::translate(viewMatrix, -camPosition); // moving camera backwards (3 units in +z) is = moving world forward (3 units in -z)
+	camView_forward = glm::vec3{ viewMatrix * glm::vec4{ 0.0f, 0.0f, -1.0f, 0.0f } };
+	camView_right = glm::vec3{ viewMatrix * glm::vec4{ 1.0f, 0.0f, 0.0f, 0.0f } };
+	camView_up = glm::vec3{ viewMatrix * glm::vec4{ 0.0f, 1.0f, 0.0f, 0.0f } };
+}
+
+void UpdateViewPos() {
+	velocity = moveSpeed * fMove * camView_forward + moveSpeed * sMove * camView_right;
+	if (glm::length2(velocity) > 0.1f) {
+		velocity = glm::normalize(velocity);
+	}
+	camPosition = camPosition + (float) deltaTime * velocity;
 	viewMatrix = glm::translate(viewMatrix, -camPosition); // moving camera backwards (3 units in +z) is = moving world forward (3 units in -z)
 }
 
@@ -178,21 +201,28 @@ void ProcessInput(GLFWwindow* window, std::vector<BasicInput::Key>* keys) {
 		rotationDeg -= 90.0f * deltaTime;
 		UpdateTransformMatrix();
 	}
+	fMove = 0.0f;
+	sMove = 0.0f;
+	vMove = 0.0f;
 	if ((*keys)[6].KeyIsDown()) {
-		translation.y += 2.0f * deltaTime;
-		UpdateTransformMatrix();
+		//translation.y += 2.0f * deltaTime;
+		//UpdateTransformMatrix();
+		fMove = clip(fMove + 1.0f, -1.0f, 1.0f);
 	}
 	if ((*keys)[7].KeyIsDown()) {
-		translation.y -= 2.0f * deltaTime;
-		UpdateTransformMatrix();
+		//translation.y -= 2.0f * deltaTime;
+		//UpdateTransformMatrix();
+		fMove = clip(fMove - 1.0f, -1.0f, 1.0f);
 	}
 	if ((*keys)[8].KeyIsDown()) {
-		translation.x -= 2.0f * deltaTime;
-		UpdateTransformMatrix();
+		//translation.x -= 2.0f * deltaTime;
+		//UpdateTransformMatrix();
+		sMove = clip(sMove - 1.0f, -1.0f, 1.0f);
 	}
 	if ((*keys)[9].KeyIsDown()) {
-		translation.x += 2.0f * deltaTime;
-		UpdateTransformMatrix();
+		//translation.x += 2.0f * deltaTime;
+		//UpdateTransformMatrix();
+		sMove = clip(sMove + 1.0f, -1.0f, 1.0f);
 	}
 	if ((*keys)[10].KeyIsDown()) {
 		scale += 1.0f * deltaTime;
@@ -212,12 +242,12 @@ void ProcessInput(GLFWwindow* window, std::vector<BasicInput::Key>* keys) {
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 			mouseX = 0.0f;
 			mouseY = 0.0f;
+			glfwSetCursorPos(window, 0, 0);
 		}
 		else {
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 		}
 	}
-	std::cout << "x: " << mouseX << ", y: " << mouseY << "       \n" << "cam rotation: " << camRotation.x << " " << camRotation.y << "     \033[A\r";
 }
 
 void DrawTriangle(unsigned int vao, unsigned int triCount) {
@@ -479,7 +509,17 @@ int main() {
 
 		// update matrices
 		UpdateModelMatrix();
-		UpdateViewMatrix();
+		UpdateViewAngles();
+		UpdateViewPos();
+
+		std::cout << "x: " << mouseX << ", y: " << mouseY << "                         " << std::endl;
+		std::cout << "cam rotation: " << camRotation.x << " " << camRotation.y << "                         " << std::endl;
+		std::cout << "cam position: " << camPosition.x << ", " << camPosition.y << ", " << camPosition.z << "                           " << std::endl;
+		std::cout << "cam forward : " << camView_forward.x << ", " << camView_forward.y << ", " << camView_forward.z << "                           " << std::endl;
+		std::cout << "cam right : " << camView_right.x << ", " << camView_right.y << ", " << camView_right.z << "                           " << std::endl;
+		std::cout << "cam velocity : " << velocity.x << ", " << velocity.y << ", " << velocity.z << "                           ";
+		std::cout << "\033[A\033[A\033[A\033[A\033[A\r";
+
 
 		// clear last render
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
