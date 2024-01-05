@@ -5,6 +5,7 @@
 #include "stb/stb_image.h"
 #include "math/mathutil.h"
 #include "input-handling/UserInputs.h"
+#include "entities/Camera.h"
 
 const int kDefaultWindowWidth = 800;
 const int kDefaultWindowHeight = 600;
@@ -36,19 +37,28 @@ glm::vec3 world_forward{ 0.0f, 0.0f, 1.0f };
 
 // Camera
 bool use_perspective = true;
+bool cursor_locked = false;
 static float vFov = 90.0f;
 glm::vec3 camPos = glm::vec3(0.0f, 0.0f, 1.0f);
 glm::vec3 camVel = glm::vec3(0.0f);
 float camSpeed = 1.0f;
 float camPitch = 0.0f;
 float camYaw = 0.0f;
+
+Camera cam{ camPos, glm::vec3{camPitch, camYaw, 0.0f} };
+
 glm::vec3 camDir = -world_forward;
 glm::vec3 camRight = glm::normalize(glm::cross(world_up, -camDir));
 glm::vec3 camUp = glm::cross(camDir, camRight);
 
+glm::vec3 forward_ = world_forward;
+glm::vec3 right_ = world_right;
+glm::vec3 up_ = world_up;
+glm::vec3 delta_{ };
+
 // todo: replace with custom version
 static glm::mat4 viewMatrix = glm::lookAt(
-	glm::vec3{0.0f},	 // cam start position
+	glm::vec3{ 0.0f },	 // cam start position
 	-world_forward,      // cam direction is opposite of its physical forward vector
 	world_up             // world up direction
 );
@@ -106,6 +116,7 @@ void UpdateTransformMatrix() {
 	transform = glm::translate(transform, translation);
 	transform = glm::rotate(transform, glm::radians(rotationDeg), glm::vec3{ 0.0, 0.0, 1.0 });
 	transform = glm::scale(transform, scale);
+
 }
 
 void UpdateModelMatrix() {
@@ -113,30 +124,27 @@ void UpdateModelMatrix() {
 }
 
 void UpdateViewMatrix() {
-	if (user_input::cursor_locked) {
+	if (cursor_locked) {
 		camPitch = clip(static_cast<float>(camPitch + (mouseY * m_pitch * sensitivity)), pitch_min, pitch_max);
 		camYaw = wrap(static_cast<float>(camYaw + (mouseX * m_yaw * sensitivity)), 0.0f, 360.0f);
 	}
 
 	glm::mat4 camRot{ 1.0f };
-	camRot = glm::rotate(camRot, glm::radians(camPitch), camRight);
-	camRot = glm::rotate(camRot, glm::radians(camYaw), world_up);
 
-	viewMatrix = glm::lookAt(
-		glm::vec3{ 0.0f },
-		camDir,
-		world_up
-	);
+	// quantize
+	float camPitch_ = static_cast<float>(static_cast<int>(camPitch / 15.0f) * 15.0f);
+	float camYaw_ = static_cast<float>(static_cast<int>(camYaw / 15.0f) * 15.0f);
 
-	glm::vec3 forward = glm::vec3{ camRot * glm::vec4{ camDir, 1.0f } };
-	glm::vec3 right = glm::vec3{ camRot * glm::vec4{ camRight, 1.0f } };
-	glm::vec3 up = glm::vec3{ camRot * glm::vec4{ camUp, 1.0f } };
+	cam.set_angles(glm::vec3{-camPitch, -camYaw, 0.0f});
 
-	glm::vec3 delta = static_cast<float>(deltaTime) * (camVel.x * right + camVel.y * up + camVel.z * forward);
+	forward_ = cam.GetForward();
+	right_ = cam.GetRight();
+	up_ = cam.GetUp();
 
-	camPos += delta;
-	viewMatrix = glm::translate(viewMatrix, -camPos); // moving camera backwards (3 units in +z) is = moving world forward (3 units in -z)
-	viewMatrix = camRot * viewMatrix;
+	glm::vec3 delta = static_cast<float>(deltaTime) * (camVel.x * right_ + camVel.y * up_ - camVel.z * forward_);
+	cam.set_position(cam.get_position() + delta);
+
+	viewMatrix = cam.GetViewMatrix();
 
 }
 
@@ -151,7 +159,7 @@ void PollInput(GLFWwindow* window) {
 
 	// mouse
 	glfwGetCursorPos(window, &mouseX, &mouseY);
-	if (user_input::cursor_locked) {
+	if (cursor_locked) {
 		glfwSetCursorPos(window, 0, 0);
 	}
 }
@@ -194,12 +202,24 @@ void ProcessInput(GLFWwindow* window) {
 		camVel = glm::vec3{ 0.0f };
 	}
 
-	if (user_input::cursor_locked) {
+	// don't read value stored in user_input because i'm lazy
+	if (user_input::in_toggle_cursor_lock.WasKeyJustPressed()) {
+		cursor_locked = !cursor_locked;
+		ToggleCursorLock(window, cursor_locked);
+	}
+
+	if (cursor_locked) {
+		glfwSetCursorPos(window, 0, 0);
+	}
+}
+
+void ToggleCursorLock(GLFWwindow* window, bool locked) {
+	if (locked) { // just locked, so don't snap to where mouse was when not locked
 		glfwSetCursorPos(window, windowWidth / 2, windowHeight / 2);
 		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-		//mouseX = 0.0f;
-		//mouseY = 0.0f;
 		glfwSetCursorPos(window, 0, 0);
+		mouseX = 0.0f;
+		mouseY = 0.0f;
 	}
 	else {
 		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
@@ -246,49 +266,51 @@ int main() {
 		std::cout << "Raw input is supported, enabling" << std::endl;
 	}
 
+	ToggleCursorLock(window, cursor_locked);
+
 	// temporary vertices for a vertically stretched cube
 	float vertices[] = {
-		-0.5f, -10.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
-		 0.5f, -10.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
-		 0.5f,  10.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
-		 0.5f,  10.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
-		-0.5f,  10.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
-		-0.5f, -10.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
+		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
 
-		-0.5f, -10.5f,  0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
-		 0.5f, -10.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
-		 0.5f,  10.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
-		 0.5f,  10.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
-		-0.5f,  10.5f,  0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
-		-0.5f, -10.5f,  0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
+		-0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
 
-		-0.5f,  10.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
-		-0.5f,  10.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
-		-0.5f, -10.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
-		-0.5f, -10.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
-		-0.5f, -10.5f,  0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
-		-0.5f,  10.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
 
-		 0.5f,  10.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
-		 0.5f,  10.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
-		 0.5f, -10.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
-		 0.5f, -10.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
-		 0.5f, -10.5f,  0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
-		 0.5f,  10.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
 
-		-0.5f, -10.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
-		 0.5f, -10.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
-		 0.5f, -10.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
-		 0.5f, -10.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
-		-0.5f, -10.5f,  0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
-		-0.5f, -10.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
 
-		-0.5f,  10.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
-		 0.5f,  10.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
-		 0.5f,  10.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
-		 0.5f,  10.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
-		-0.5f,  10.5f,  0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
-		-0.5f,  10.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f
+		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f
 	};
 
 	/* Textures */
@@ -462,8 +484,11 @@ int main() {
 		std::cout << "x: " << mouseX << ", y: " << mouseY << "                         " << std::endl;
 		std::cout << "cam rotation: " << camYaw << " " << camPitch << "                         " << std::endl;
 		std::cout << "cam position: " << camPos.x << ", " << camPos.y << ", " << camPos.z << "                           " << std::endl;
-		std::cout << "cam velocity: " << camVel.x << ", " << camVel.y << ", " << camVel.z << "                           " << std::endl;
-		std::cout << "\033[A\033[A\033[A\033[A\r";
+		std::cout << "forward_: " << forward_.x << ", " << forward_.y << ", " << forward_.z << "                           " << std::endl;
+		std::cout << "right_: " << right_.x << ", " << right_.y << ", " << right_.z << "                           " << std::endl;
+		std::cout << "up_:" << up_.x << ", " << up_.y << ", " << up_.z << "                           " << std::endl;
+		std::cout << "delta_: " << delta_.x << ", " << delta_.y << ", " << delta_.z << "                           " << std::endl;
+		std::cout << "\033[A\033[A\033[A\033[A\033[A\033[A\033[A\r";
 
 		// clear last render
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);

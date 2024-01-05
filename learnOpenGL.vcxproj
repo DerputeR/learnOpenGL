@@ -137,6 +137,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\entities\Camera.cpp" />
+    <ClCompile Include="src\entities\Transform.cpp" />
     <ClCompile Include="src\convars\ConVars.cpp" />
     <ClCompile Include="dependencies\include\glm\detail\glm.cpp" />
     <ClCompile Include="src\math\mathutil.cpp" />
@@ -149,6 +151,8 @@
     <ClCompile Include="src\input-handling\UserInputs.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\entities\Camera.h" />
+    <ClInclude Include="src\entities\Transform.h" />
     <ClInclude Include="src\Application.h" />
     <ClInclude Include="src\convars\ConVars.h" />
     <ClInclude Include="dependencies\include\glm\common.hpp" />

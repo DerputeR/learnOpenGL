@@ -13,4 +13,5 @@ void UpdateViewMatrix();
 
 void PollInput(GLFWwindow* window);
 void ProcessInput(GLFWwindow *window);
+void ToggleCursorLock(GLFWwindow* window, bool locked);
 
