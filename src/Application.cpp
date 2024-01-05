@@ -1,14 +1,10 @@
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
+#include "Application.h"
 #include <iostream>
-#include "input-handling/BasicInput.h"
 #include "shader-loader/ShaderLoader.h"
 #include <vector>
 #include "stb/stb_image.h"
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtx/norm.hpp>
+#include "math/mathutil.h"
+#include "input-handling/UserInputs.h"
 
 const int kDefaultWindowWidth = 800;
 const int kDefaultWindowHeight = 600;
@@ -35,48 +31,29 @@ static glm::vec3 translation{ 0.0f, -0.3f, 0.0f };
 static glm::vec3 scale{ 0.5f, 0.5f, 0.5f };
 
 static float vFov = 90.0f;
-static glm::mat4 orthoMatrix{ };
-static glm::mat4 perspMatrix{ };
+static glm::mat4 projectionMatrix{ };
 
-bool usePerspective = true;
-
-bool cursorLocked = false;
+bool use_perspective = true;
 float sensitivity = 1.0f;
 float m_pitch = 0.022f;
 float m_yaw = 0.022f;
 double mouseX = 0.0;
 double mouseY = 0.0;
 
-float moveSpeed = 1.0f;
-static glm::vec3 velocity{ 0.0f, 0.0f, 0.0f };
-static float fMove = 0.0f;
-static float sMove = 0.0f;
-static float vMove = 0.0f;
-
-
-// camera
-static glm::vec3 camPosition{ 0.0f, 0.0f, 1.0f };
-static glm::vec3 camRotation{ 0.0f, 0.0f, 0.0f };
-static glm::vec3 camView_forward{ 0.0f, 0.0f, -1.0f };
-static glm::vec3 camView_right{ 1.0f, 0.0f, 0.0f };
-static glm::vec3 camView_up{ 0.0f, 1.0f, 0.0f };
-
-// https://stackoverflow.com/questions/9323903/most-efficient-elegant-way-to-clip-a-number
-template <typename T>
-T clip(const T& n, const T& lower, const T& upper) {
-	return std::max(lower, std::min(n, upper));
-}
-
-void UpdateProjectionMatrix() {
-	perspMatrix = glm::perspective(glm::radians(vFov), (float)windowWidth / (float)windowHeight, 0.1f, 100.0f);
-	orthoMatrix = glm::ortho(
-		-1.0f * ((float)windowWidth / (float)windowHeight), // left
-		1.0f * ((float)windowWidth / (float)windowHeight),  // right
-		-1.0f, // bottom
-		1.0f,  // top
-		-10.0f,   // near
-		10.0f  // far
-	);
+glm::mat4 UpdateProjectionMatrix(bool perspective) {
+	if (!perspective) {
+		return glm::ortho(
+			-1.0f * ((float)windowWidth / (float)windowHeight), // left
+			1.0f * ((float)windowWidth / (float)windowHeight),  // right
+			-1.0f, // bottom
+			1.0f,  // top
+			-10.0f,   // near
+			10.0f  // far
+		);
+	}
+	else {
+		return glm::perspective(glm::radians(vFov), (float)windowWidth / (float)windowHeight, 0.1f, 100.0f);
+	}
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
@@ -87,7 +64,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	windowWidth = width;
 	windowHeight = height;
 	glViewport(0, 0, width, height);
-	UpdateProjectionMatrix();
+	projectionMatrix = UpdateProjectionMatrix(use_perspective);
 }
 
 void window_iconify_callback(GLFWwindow* window, int iconified) {
@@ -109,144 +86,67 @@ void UpdateTransformMatrix() {
 }
 
 void UpdateModelMatrix() {
-	modelMatrix = glm::rotate(glm::mat4{ 1.0f }, (float) currentTime * glm::radians(50.0f), glm::vec3{ 0.5f, 1.0f, 0.0f });
+	//modelMatrix = glm::rotate(glm::mat4{ 1.0f }, (float) currentTime * glm::radians(50.0f), glm::vec3{ 0.5f, 1.0f, 0.0f });
 }
 
 void UpdateViewAngles() {
 	viewMatrix = glm::mat4{ 1.0f };
-	viewMatrix = glm::rotate(viewMatrix, glm::radians(camRotation.y), glm::vec3{0.0f, 1.0f, 0.0f});
-	viewMatrix = glm::rotate(viewMatrix, glm::radians(camRotation.x), glm::vec3{1.0f, 0.0f, 0.0f});
-	//viewMatrix = glm::translate(viewMatrix, -camPosition); // moving camera backwards (3 units in +z) is = moving world forward (3 units in -z)
-	camView_forward = glm::vec3{ viewMatrix * glm::vec4{ 0.0f, 0.0f, -1.0f, 0.0f } };
-	camView_right = glm::vec3{ viewMatrix * glm::vec4{ 1.0f, 0.0f, 0.0f, 0.0f } };
-	camView_up = glm::vec3{ viewMatrix * glm::vec4{ 0.0f, 1.0f, 0.0f, 0.0f } };
+	viewMatrix = glm::translate(viewMatrix, glm::vec3{0.0f, 0.0f, -1.0f}); // moving camera backwards (3 units in +z) is = moving world forward (3 units in -z)
 }
-
-void UpdateViewPos() {
-	velocity = moveSpeed * fMove * camView_forward + moveSpeed * sMove * camView_right;
-	if (glm::length2(velocity) > 0.1f) {
-		velocity = glm::normalize(velocity);
-	}
-	camPosition = camPosition + (float) deltaTime * velocity;
-	viewMatrix = glm::translate(viewMatrix, -camPosition); // moving camera backwards (3 units in +z) is = moving world forward (3 units in -z)
-}
-
-std::vector<BasicInput::Key> keys{
-	{"quit", GLFW_KEY_ESCAPE},
-	{"toggleWireframe", GLFW_KEY_TAB},
-	{"increasePercent", GLFW_KEY_UP},
-	{"decreasePercent", GLFW_KEY_DOWN},
-	{"rotateCCW", GLFW_KEY_LEFT},
-	{"rotateCW", GLFW_KEY_RIGHT},
-	{"moveUp", GLFW_KEY_W},
-	{"moveDown", GLFW_KEY_S},
-	{"moveLeft", GLFW_KEY_A},
-	{"moveRight", GLFW_KEY_D},
-	{"scaleUp", GLFW_KEY_EQUAL},
-	{"sacleDown", GLFW_KEY_MINUS},
-	{"togglePerspective", GLFW_KEY_F5},
-	{"toggleCursorLock", GLFW_KEY_C},
-};
 
 // todo: figure out how to not be forced to pass a window pointer everywhere
-void PollInput(GLFWwindow* window, std::vector<BasicInput::Key>* keys) {
-	for (int i = 0; i < keys->size(); i++) {
-		keys->at(i).updateState(glfwGetKey(window, keys->at(i).keycode));
+void PollInput(GLFWwindow* window) {
+	// keys
+	for (int i = 0; i < user_input::key_inputs.size(); i++) {
+		float key_value = static_cast<float>(glfwGetKey(window, user_input::key_inputs[i]->keycode));
+		user_input::key_inputs[i]->set_normalized_value(key_value);
 	}
+	user_input::ProcessInputs(static_cast<float>(deltaTime));
+
+	// mouse
 	glfwGetCursorPos(window, &mouseX, &mouseY);
-	if (cursorLocked) {
+	if (user_input::cursor_locked) {
 		glfwSetCursorPos(window, 0, 0);
-		camRotation.x += mouseY * sensitivity * m_pitch;
-		camRotation.y += mouseX * sensitivity * m_yaw;
-		camRotation.x = clip(camRotation.x, -89.0f, 89.0f);
-		while (camRotation.y > 360.0f) {
-			camRotation.y -= 360.0f;
-		}
-		while (camRotation.y < 0) {
-			camRotation.y += 360.0f;
-		}
 	}
 }
 
 // todo: give keys an associated convar/action it can execute on process, which will pass its state so that the action can determine how it behaves
-void ProcessInput(GLFWwindow* window, std::vector<BasicInput::Key>* keys) {
-	if ((*keys)[0].KeyJustPressed()) {
+void ProcessInput(GLFWwindow* window) {
+	if (user_input::should_quit) {
 		glfwSetWindowShouldClose(window, true);
 	}
-	static bool wireframeEnabled = 0;
-	if ((*keys)[1].KeyJustPressed()) {
-		wireframeEnabled = !wireframeEnabled;
-		if (wireframeEnabled) {
-			// built-in wireframe mode
-			// NOTE: must use GL_FRONT_AND_BACK in core profile
-			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		}
-		else {
-			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		}
+
+	if (user_input::wireframe_enabled) {
+		// built-in wireframe mode
+		// NOTE: must use GL_FRONT_AND_BACK in core profile
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	}
-	if ((*keys)[2].KeyIsDown()) {
-		percent += 1.0f * deltaTime;
-		percent = std::min(1.0f, percent);
+	else {
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
-	if ((*keys)[3].KeyIsDown()) {
-		percent -= 1.0f * deltaTime;
-		percent = std::max(0.0f, percent);
+
+	if (user_input::perspective_enabled != use_perspective) {
+		use_perspective = user_input::perspective_enabled;
+		projectionMatrix = UpdateProjectionMatrix(use_perspective);
 	}
-	if ((*keys)[4].KeyIsDown()) {
-		rotationDeg += 90.0f * deltaTime;
+	
+	percent = user_input::alpha_value;
+
+	if (rotationDeg != user_input::roll_degrees || scale.x != user_input::model_scale) {
+		rotationDeg = user_input::roll_degrees;
+		scale = glm::vec3{ user_input::model_scale };
 		UpdateTransformMatrix();
 	}
-	if ((*keys)[5].KeyIsDown()) {
-		rotationDeg -= 90.0f * deltaTime;
-		UpdateTransformMatrix();
+
+	if (user_input::cursor_locked) {
+		glfwSetCursorPos(window, windowWidth / 2, windowHeight / 2);
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		mouseX = 0.0f;
+		mouseY = 0.0f;
+		glfwSetCursorPos(window, 0, 0);
 	}
-	fMove = 0.0f;
-	sMove = 0.0f;
-	vMove = 0.0f;
-	if ((*keys)[6].KeyIsDown()) {
-		//translation.y += 2.0f * deltaTime;
-		//UpdateTransformMatrix();
-		fMove = clip(fMove + 1.0f, -1.0f, 1.0f);
-	}
-	if ((*keys)[7].KeyIsDown()) {
-		//translation.y -= 2.0f * deltaTime;
-		//UpdateTransformMatrix();
-		fMove = clip(fMove - 1.0f, -1.0f, 1.0f);
-	}
-	if ((*keys)[8].KeyIsDown()) {
-		//translation.x -= 2.0f * deltaTime;
-		//UpdateTransformMatrix();
-		sMove = clip(sMove - 1.0f, -1.0f, 1.0f);
-	}
-	if ((*keys)[9].KeyIsDown()) {
-		//translation.x += 2.0f * deltaTime;
-		//UpdateTransformMatrix();
-		sMove = clip(sMove + 1.0f, -1.0f, 1.0f);
-	}
-	if ((*keys)[10].KeyIsDown()) {
-		scale += 1.0f * deltaTime;
-		UpdateTransformMatrix();
-	}
-	if ((*keys)[11].KeyIsDown()) {
-		scale -= 1.0f * deltaTime;
-		UpdateTransformMatrix();
-	}
-	if ((*keys)[12].KeyJustPressed()) {
-		usePerspective = !usePerspective;
-	}
-	if ((*keys)[13].KeyJustPressed()) {
-		cursorLocked = !cursorLocked;
-		if (cursorLocked) {
-			glfwSetCursorPos(window, windowWidth / 2, windowHeight / 2);
-			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-			mouseX = 0.0f;
-			mouseY = 0.0f;
-			glfwSetCursorPos(window, 0, 0);
-		}
-		else {
-			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-		}
+	else {
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 	}
 }
 
@@ -457,7 +357,6 @@ int main() {
 
 	// note: shaders are not part of VAO state
 
-
 	// parse and prepare shader code
 	ShaderLoader::ShaderSources shaderSources = ShaderLoader::ParseShaderSources(vertShaderPath, fragShaderPath);
 
@@ -476,19 +375,11 @@ int main() {
 	glUniform1i(texture0UniformLocation, 0);
 	glUniform1i(texture1UniformLocation, 1);
 
-	// GLM vector/matrix test
-	glm::vec4 v0{ 1.0f, 0.0f, 0.0f, 1.0f };
-
+	projectionMatrix = UpdateProjectionMatrix(user_input::perspective_enabled);
 	UpdateTransformMatrix();
 	UpdateProjectionMatrix();
 
-	glm::vec4 v1 = transform * v0;
-	std::cout << "(" << v0.x << ", " << v0.y << ", " << v0.z << ")" << std::endl;
-	std::cout << "(" << v1.x << ", " << v1.y << ", " << v1.z << ")" << std::endl;
-
-
 	glEnable(GL_DEPTH_TEST);
-
 
 	while (!glfwWindowShouldClose(window)) {
 		lastTime = currentTime;
@@ -504,22 +395,12 @@ int main() {
 		//glBindVertexArray(NULL);
 
 		// input
-		PollInput(window, &keys);
-		ProcessInput(window, &keys);
+		PollInput(window);
+		ProcessInput(window);
 
 		// update matrices
 		UpdateModelMatrix();
 		UpdateViewAngles();
-		UpdateViewPos();
-
-		std::cout << "x: " << mouseX << ", y: " << mouseY << "                         " << std::endl;
-		std::cout << "cam rotation: " << camRotation.x << " " << camRotation.y << "                         " << std::endl;
-		std::cout << "cam position: " << camPosition.x << ", " << camPosition.y << ", " << camPosition.z << "                           " << std::endl;
-		std::cout << "cam forward : " << camView_forward.x << ", " << camView_forward.y << ", " << camView_forward.z << "                           " << std::endl;
-		std::cout << "cam right : " << camView_right.x << ", " << camView_right.y << ", " << camView_right.z << "                           " << std::endl;
-		std::cout << "cam velocity : " << velocity.x << ", " << velocity.y << ", " << velocity.z << "                           ";
-		std::cout << "\033[A\033[A\033[A\033[A\033[A\r";
-
 
 		// clear last render
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -542,12 +423,7 @@ int main() {
 			glUniformMatrix4fv(transformUniformLocation, 1, GL_FALSE, glm::value_ptr(transform));
 			glUniformMatrix4fv(modelMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(modelMatrix));
 			glUniformMatrix4fv(viewMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(viewMatrix));
-			if (usePerspective) {
-				glUniformMatrix4fv(projMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(perspMatrix));
-			}
-			else {
-				glUniformMatrix4fv(projMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(orthoMatrix));
-			}
+			glUniformMatrix4fv(projMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
 		}
 		//DrawTriangle(VAO, sizeof(indices) / sizeof(indices[0]));
 		DrawTriangle(VAO, 36);
