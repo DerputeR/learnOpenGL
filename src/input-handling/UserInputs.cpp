@@ -72,5 +72,9 @@ namespace user_input {
 		if (in_toggle_cursor_lock.WasKeyJustPressed()) {
 			cursor_locked = !cursor_locked;
 		}
+		move_forward = in_move_forward.IsKeyDown();
+		move_back = in_move_back.IsKeyDown();
+		move_left = in_move_left.IsKeyDown();
+		move_right = in_move_right.IsKeyDown();
 	}
 }

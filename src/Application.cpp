@@ -23,17 +23,40 @@ double deltaTime = 0.0;
 
 // matrices
 static glm::mat4 modelMatrix{ 1.0f };
-static glm::mat4 viewMatrix{ 1.0f };
-
-static glm::mat4 transform { 1.0f }; // single arg appears to just scale the identity matrix; no arg gives null (all 0s) matrix
+static glm::mat4 transform{ 1.0f }; // single arg appears to just scale the identity matrix; no arg gives null (all 0s) matrix
 static float rotationDeg = 0;
 static glm::vec3 translation{ 0.0f, -0.3f, 0.0f };
 static glm::vec3 scale{ 0.5f, 0.5f, 0.5f };
 
-static float vFov = 90.0f;
 static glm::mat4 projectionMatrix{ };
 
+glm::vec3 world_up{ 0.0f, 1.0f, 0.0f };
+glm::vec3 world_right{ 1.0f, 0.0f, 0.0f };
+glm::vec3 world_forward{ 0.0f, 0.0f, 1.0f };
+
+// Camera
 bool use_perspective = true;
+static float vFov = 90.0f;
+glm::vec3 camPos = glm::vec3(0.0f, 0.0f, 1.0f);
+glm::vec3 camVel = glm::vec3(0.0f);
+float camSpeed = 1.0f;
+float camPitch = 0.0f;
+float camYaw = 0.0f;
+glm::vec3 camDir = -world_forward;
+glm::vec3 camRight = glm::normalize(glm::cross(world_up, -camDir));
+glm::vec3 camUp = glm::cross(camDir, camRight);
+
+// todo: replace with custom version
+static glm::mat4 viewMatrix = glm::lookAt(
+	glm::vec3{0.0f},	 // cam start position
+	-world_forward,      // cam direction is opposite of its physical forward vector
+	world_up             // world up direction
+);
+
+// is fine at 90 but cs does 89 for its own broken reasons
+float pitch_max = 89.0f;
+float pitch_min = -89.0f;
+
 float sensitivity = 1.0f;
 float m_pitch = 0.022f;
 float m_yaw = 0.022f;
@@ -89,9 +112,32 @@ void UpdateModelMatrix() {
 	//modelMatrix = glm::rotate(glm::mat4{ 1.0f }, (float) currentTime * glm::radians(50.0f), glm::vec3{ 0.5f, 1.0f, 0.0f });
 }
 
-void UpdateViewAngles() {
-	viewMatrix = glm::mat4{ 1.0f };
-	viewMatrix = glm::translate(viewMatrix, glm::vec3{0.0f, 0.0f, -1.0f}); // moving camera backwards (3 units in +z) is = moving world forward (3 units in -z)
+void UpdateViewMatrix() {
+	if (user_input::cursor_locked) {
+		camPitch = clip(static_cast<float>(camPitch + (mouseY * m_pitch * sensitivity)), pitch_min, pitch_max);
+		camYaw = wrap(static_cast<float>(camYaw + (mouseX * m_yaw * sensitivity)), 0.0f, 360.0f);
+	}
+
+	glm::mat4 camRot{ 1.0f };
+	camRot = glm::rotate(camRot, glm::radians(camPitch), camRight);
+	camRot = glm::rotate(camRot, glm::radians(camYaw), world_up);
+
+	viewMatrix = glm::lookAt(
+		glm::vec3{ 0.0f },
+		camDir,
+		world_up
+	);
+
+	glm::vec3 forward = glm::vec3{ camRot * glm::vec4{ camDir, 1.0f } };
+	glm::vec3 right = glm::vec3{ camRot * glm::vec4{ camRight, 1.0f } };
+	glm::vec3 up = glm::vec3{ camRot * glm::vec4{ camUp, 1.0f } };
+
+	glm::vec3 delta = static_cast<float>(deltaTime) * (camVel.x * right + camVel.y * up + camVel.z * forward);
+
+	camPos += delta;
+	viewMatrix = glm::translate(viewMatrix, -camPos); // moving camera backwards (3 units in +z) is = moving world forward (3 units in -z)
+	viewMatrix = camRot * viewMatrix;
+
 }
 
 // todo: figure out how to not be forced to pass a window pointer everywhere
@@ -129,7 +175,7 @@ void ProcessInput(GLFWwindow* window) {
 		use_perspective = user_input::perspective_enabled;
 		projectionMatrix = UpdateProjectionMatrix(use_perspective);
 	}
-	
+
 	percent = user_input::alpha_value;
 
 	if (rotationDeg != user_input::roll_degrees || scale.x != user_input::model_scale) {
@@ -138,11 +184,21 @@ void ProcessInput(GLFWwindow* window) {
 		UpdateTransformMatrix();
 	}
 
+	float fMove = user_input::move_forward - user_input::move_back;
+	float sMove = user_input::move_right - user_input::move_left;
+
+	if (fMove != 0.0f || sMove != 0.0f) {
+		camVel = camSpeed * glm::normalize(glm::vec3{ sMove, 0.0f, fMove });
+	}
+	else {
+		camVel = glm::vec3{ 0.0f };
+	}
+
 	if (user_input::cursor_locked) {
 		glfwSetCursorPos(window, windowWidth / 2, windowHeight / 2);
 		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-		mouseX = 0.0f;
-		mouseY = 0.0f;
+		//mouseX = 0.0f;
+		//mouseY = 0.0f;
 		glfwSetCursorPos(window, 0, 0);
 	}
 	else {
@@ -190,49 +246,49 @@ int main() {
 		std::cout << "Raw input is supported, enabling" << std::endl;
 	}
 
-	// temporary vertices for a CUBE
+	// temporary vertices for a vertically stretched cube
 	float vertices[] = {
-		-0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
-		 0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
-		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
-		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
-		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
+		-0.5f, -10.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
+		 0.5f, -10.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
+		 0.5f,  10.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
+		 0.5f,  10.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
+		-0.5f,  10.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
+		-0.5f, -10.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
 
-		-0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
-		 0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
-		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
-		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
-		-0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
-		-0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
+		-0.5f, -10.5f,  0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
+		 0.5f, -10.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
+		 0.5f,  10.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
+		 0.5f,  10.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
+		-0.5f,  10.5f,  0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
+		-0.5f, -10.5f,  0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
 
-		-0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
-		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
-		-0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
-		-0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
+		-0.5f,  10.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
+		-0.5f,  10.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
+		-0.5f, -10.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
+		-0.5f, -10.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
+		-0.5f, -10.5f,  0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
+		-0.5f,  10.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
 
-		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
-		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
-		 0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
-		 0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
-		 0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
-		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
+		 0.5f,  10.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
+		 0.5f,  10.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
+		 0.5f, -10.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
+		 0.5f, -10.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
+		 0.5f, -10.5f,  0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
+		 0.5f,  10.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
 
-		-0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
-		 0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
-		 0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
-		 0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
-		-0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
-		-0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
+		-0.5f, -10.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
+		 0.5f, -10.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
+		 0.5f, -10.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
+		 0.5f, -10.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
+		-0.5f, -10.5f,  0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
+		-0.5f, -10.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
 
-		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
-		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
-		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
-		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
-		-0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
-		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f
+		-0.5f,  10.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
+		 0.5f,  10.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
+		 0.5f,  10.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
+		 0.5f,  10.5f,  0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
+		-0.5f,  10.5f,  0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
+		-0.5f,  10.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f
 	};
 
 	/* Textures */
@@ -270,7 +326,8 @@ int main() {
 			glBindTexture(GL_TEXTURE_2D, textures[i]);
 
 			// texture wrapping
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+			//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
 			// texture filtering
@@ -284,7 +341,7 @@ int main() {
 			glGenerateMipmap(GL_TEXTURE_2D);
 		}
 		else {
-			std::cerr << "Failed to load image!"  << std::endl;
+			std::cerr << "Failed to load image!" << std::endl;
 		}
 
 		// Free image data
@@ -301,7 +358,7 @@ int main() {
 		}
 	}
 	std::cout << std::endl;
-	
+
 
 	// get into habit of drawing CCW
 	unsigned int indices[] = {
@@ -361,7 +418,7 @@ int main() {
 	ShaderLoader::ShaderSources shaderSources = ShaderLoader::ParseShaderSources(vertShaderPath, fragShaderPath);
 
 	// compile, link, and validate shader program
-	unsigned int shaderProgram = ShaderLoader::CreateShaderProgram(shaderSources.vertShaderSrc, shaderSources.fragShaderSrc);	
+	unsigned int shaderProgram = ShaderLoader::CreateShaderProgram(shaderSources.vertShaderSrc, shaderSources.fragShaderSrc);
 	glUseProgram(shaderProgram);
 
 	unsigned int timeUniformLocation = glGetUniformLocation(shaderProgram, "time");
@@ -400,7 +457,13 @@ int main() {
 
 		// update matrices
 		UpdateModelMatrix();
-		UpdateViewAngles();
+		UpdateViewMatrix();
+
+		std::cout << "x: " << mouseX << ", y: " << mouseY << "                         " << std::endl;
+		std::cout << "cam rotation: " << camYaw << " " << camPitch << "                         " << std::endl;
+		std::cout << "cam position: " << camPos.x << ", " << camPos.y << ", " << camPos.z << "                           " << std::endl;
+		std::cout << "cam velocity: " << camVel.x << ", " << camVel.y << ", " << camVel.z << "                           " << std::endl;
+		std::cout << "\033[A\033[A\033[A\033[A\r";
 
 		// clear last render
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -413,7 +476,7 @@ int main() {
 		glBindTexture(GL_TEXTURE_2D, textures[0]);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, textures[1]);
-		
+
 		// render
 		// draw triangles
 		if (shaderProgram) {

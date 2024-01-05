@@ -9,7 +9,7 @@
 glm::mat4 UpdateProjectionMatrix(bool perspective = true);
 void UpdateTransformMatrix();
 void UpdateModelMatrix();
-void UpdateViewAngles();
+void UpdateViewMatrix();
 
 void PollInput(GLFWwindow* window);
 void ProcessInput(GLFWwindow *window);
