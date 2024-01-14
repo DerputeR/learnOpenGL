@@ -142,6 +142,7 @@ void UpdateViewMatrix() {
 	up_ = cam.GetUp();
 
 	glm::vec3 delta = static_cast<float>(deltaTime) * (camVel.x * right_ + camVel.y * up_ - camVel.z * forward_);
+	delta_ = delta;
 	cam.set_position(cam.get_position() + delta);
 
 	viewMatrix = cam.GetViewMatrix();
