@@ -485,6 +485,7 @@ int main() {
 		//glBindVertexArray(NULL);
 
 		// input
+		glfwPollEvents();
 		PollInput(window);
 		ProcessInput(window);
 
@@ -537,8 +538,16 @@ int main() {
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
+		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+		{
+			GLFWwindow* backup_current_context = glfwGetCurrentContext();
+			ImGui::UpdatePlatformWindows();
+			ImGui::RenderPlatformWindowsDefault();
+			glfwMakeContextCurrent(backup_current_context);
+		}
+
 		// check and call events and swap buffers
-		glfwPollEvents();
+		
 		glfwSwapBuffers(window);
 	}
 
