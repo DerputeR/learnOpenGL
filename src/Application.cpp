@@ -6,6 +6,9 @@
 #include "math/mathutil.h"
 #include "input-handling/UserInputs.h"
 #include "entities/Camera.h"
+#include <imgui/imgui.h>
+#include <imgui/backends/imgui_impl_glfw.h>
+#include <imgui/backends/imgui_impl_opengl3.h>
 
 const int kDefaultWindowWidth = 800;
 const int kDefaultWindowHeight = 600;
@@ -67,7 +70,7 @@ static glm::mat4 viewMatrix = glm::lookAt(
 float pitch_max = 89.0f;
 float pitch_min = -89.0f;
 
-float sensitivity = 1.0f;
+float sensitivity = 1.3f;
 float m_pitch = 0.022f;
 float m_yaw = 0.022f;
 double mouseX = 0.0;
@@ -269,6 +272,14 @@ int main() {
 
 	ToggleCursorLock(window, cursor_locked);
 
+	// imgui init
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+	ImGui_ImplGlfw_InitForOpenGL(window, true);
+	ImGui_ImplOpenGL3_Init();
+
 	// temporary vertices for a vertically stretched cube
 	float vertices[] = {
 		-0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
@@ -457,7 +468,6 @@ int main() {
 
 	projectionMatrix = UpdateProjectionMatrix(user_input::perspective_enabled);
 	UpdateTransformMatrix();
-	UpdateProjectionMatrix();
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -477,6 +487,12 @@ int main() {
 		// input
 		PollInput(window);
 		ProcessInput(window);
+
+		// start ImGui frame
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
+		ImGui::ShowDemoWindow();
 
 		// update matrices
 		UpdateModelMatrix();
@@ -517,11 +533,18 @@ int main() {
 		//DrawTriangle(VAO, sizeof(indices) / sizeof(indices[0]));
 		DrawTriangle(VAO, 36);
 
+		// Render ImGui
+		ImGui::Render();
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
 		// check and call events and swap buffers
 		glfwPollEvents();
 		glfwSwapBuffers(window);
 	}
 
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
 	glfwTerminate();
 	return 0;
 }
