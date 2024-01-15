@@ -11,7 +11,7 @@ out vec4 FragColor;
 
 void main() {
 	// FragColor = vec4(1.0f, 0.5f * (sin(time) + 1.0f), 0.2f, 1.0f);
-	vec2 scaledCoord = 2f * texCoord;
+	vec2 scaledCoord = 2.0f * texCoord;
 	// vec4 timeColor = vec4(vertexColor.y * 0.5f * (cos(time) + 1.0f), vertexColor.y * 0.5f * (sin(time) + 1.0f), vertexColor.z * 0.5f * (-sin(time) + 1.0f), 1.0f);
 	// alpha value here seems to not have an effect
 	// FragColor = vec4(vertexColor, 1.0f) * vec4((texCoord.x + texCoord.y) / 2.0f);
