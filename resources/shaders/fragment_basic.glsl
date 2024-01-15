@@ -16,7 +16,7 @@ void main() {
 	// alpha value here seems to not have an effect
 	// FragColor = vec4(vertexColor, 1.0f) * vec4((texCoord.x + texCoord.y) / 2.0f);
 	// FragColor = texture(texture0, texCoord);
-	// FragColor = mix(texture(texture0, texCoord), texture(texture1, texCoord), 0.2);
+	// FragColor = mix(texture(texture0, texCoord), texture(texture1, texCoord), 0.2f);
 	vec4 texSample0 = texture(texture0, scaledCoord);
 	vec4 texSample1 = texture(texture1, vec2(scaledCoord.x, scaledCoord.y));
 	// FragColor = mix(texSample0, texSample1, percent * texSample1.w) * timeColor;
