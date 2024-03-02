@@ -1,8 +1,7 @@
 #include "BasicInput.h"
 #include "../math/mathutil.h"
 
-basic_input::KeyStatus basic_input::operator |(const KeyStatus& left, const KeyStatus& right)
-{
+basic_input::KeyStatus basic_input::operator |(const KeyStatus& left, const KeyStatus& right) {
 	return static_cast<KeyStatus>(
 		static_cast<char>(left) | static_cast<char>(right)
 		);

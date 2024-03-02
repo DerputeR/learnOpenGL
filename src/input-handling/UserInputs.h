@@ -40,6 +40,10 @@ namespace user_input {
 	extern basic_input::KeyInput in_scale_up;
 	extern basic_input::KeyInput in_scale_down;
 
+	// gui
+	extern bool show_debug_overlay;
+	extern basic_input::KeyInput in_toggle_debug_overlay;
+
 	extern std::vector<basic_input::KeyInput *> key_inputs;
 
 	void ProcessInputs(float deltaTime);

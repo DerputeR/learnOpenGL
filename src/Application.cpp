@@ -9,6 +9,7 @@
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_glfw.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
+#include "gui/InfoOverlay.h"
 
 const int kDefaultWindowWidth = 800;
 const int kDefaultWindowHeight = 600;
@@ -75,6 +76,9 @@ float m_pitch = 0.022f;
 float m_yaw = 0.022f;
 double mouseX = 0.0;
 double mouseY = 0.0;
+
+// GUI stuff
+static bool* is_overlay_visible = &user_input::show_debug_overlay;
 
 glm::mat4 UpdateProjectionMatrix(bool perspective) {
 	if (!perspective) {
@@ -493,20 +497,21 @@ int main() {
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
-		ImGui::ShowDemoWindow();
+		//ImGui::ShowDemoWindow();
+		if (*is_overlay_visible) { GUI::Debug::ShowOverlay(is_overlay_visible); }
 
 		// update matrices
 		UpdateModelMatrix();
 		UpdateViewMatrix();
 
-		std::cout << "x: " << mouseX << ", y: " << mouseY << "                         " << std::endl;
-		std::cout << "cam rotation: " << camYaw << " " << camPitch << "                         " << std::endl;
-		std::cout << "cam position: " << camPos.x << ", " << camPos.y << ", " << camPos.z << "                           " << std::endl;
-		std::cout << "forward_: " << forward_.x << ", " << forward_.y << ", " << forward_.z << "                           " << std::endl;
-		std::cout << "right_: " << right_.x << ", " << right_.y << ", " << right_.z << "                           " << std::endl;
-		std::cout << "up_:" << up_.x << ", " << up_.y << ", " << up_.z << "                           " << std::endl;
-		std::cout << "delta_: " << delta_.x << ", " << delta_.y << ", " << delta_.z << "                           " << std::endl;
-		std::cout << "\033[A\033[A\033[A\033[A\033[A\033[A\033[A\r";
+		//std::cout << "x: " << mouseX << ", y: " << mouseY << "                         " << std::endl;
+		//std::cout << "cam rotation: " << camYaw << " " << camPitch << "                         " << std::endl;
+		//std::cout << "cam position: " << camPos.x << ", " << camPos.y << ", " << camPos.z << "                           " << std::endl;
+		//std::cout << "forward_: " << forward_.x << ", " << forward_.y << ", " << forward_.z << "                           " << std::endl;
+		//std::cout << "right_: " << right_.x << ", " << right_.y << ", " << right_.z << "                           " << std::endl;
+		//std::cout << "up_:" << up_.x << ", " << up_.y << ", " << up_.z << "                           " << std::endl;
+		//std::cout << "delta_: " << delta_.x << ", " << delta_.y << ", " << delta_.z << "                           " << std::endl;
+		//std::cout << "\033[A\033[A\033[A\033[A\033[A\033[A\033[A\r";
 
 		// clear last render
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);

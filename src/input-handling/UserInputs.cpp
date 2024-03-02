@@ -14,6 +14,7 @@ namespace user_input {
 	float alpha_value = 0.0f;
 	float model_scale = 1.0f;
 	float roll_degrees = 0.0f;
+	bool show_debug_overlay = true;
 
 	basic_input::KeyInput in_toggle_cursor_lock{ 0.0f, GLFW_KEY_C };
 	basic_input::KeyInput in_quit{ 0.0f, GLFW_KEY_ESCAPE };
@@ -29,6 +30,7 @@ namespace user_input {
 	basic_input::KeyInput in_roll_cw{ 0.0f, GLFW_KEY_RIGHT };
 	basic_input::KeyInput in_scale_up{ 0.0f, GLFW_KEY_EQUAL };
 	basic_input::KeyInput in_scale_down{ 0.0f, GLFW_KEY_MINUS };
+	basic_input::KeyInput in_toggle_debug_overlay{ 0.0f, GLFW_KEY_F3 };
 
 	std::vector<basic_input::KeyInput*> key_inputs{
 		&in_toggle_cursor_lock, &in_quit,
@@ -36,7 +38,8 @@ namespace user_input {
 		&in_move_forward, &in_move_left, &in_move_back, &in_move_right,
 		&in_increase_alpha, &in_decrease_alpha,
 		&in_roll_ccw, &in_roll_cw,
-		&in_scale_up, &in_scale_down
+		&in_scale_up, &in_scale_down,
+		&in_toggle_debug_overlay
 	};
 
 	void ProcessInputs(float deltaTime) {
@@ -71,6 +74,9 @@ namespace user_input {
 		}
 		if (in_toggle_cursor_lock.WasKeyJustPressed()) {
 			cursor_locked = !cursor_locked;
+		}
+		if (in_toggle_debug_overlay.WasKeyJustPressed()) {
+			show_debug_overlay = !show_debug_overlay;
 		}
 		move_forward = in_move_forward.IsKeyDown();
 		move_back = in_move_back.IsKeyDown();

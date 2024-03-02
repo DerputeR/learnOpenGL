@@ -145,6 +145,7 @@
     <ClCompile Include="dependencies\include\imgui\imgui_tables.cpp" />
     <ClCompile Include="dependencies\include\imgui\imgui_widgets.cpp" />
     <ClCompile Include="dependencies\include\imgui\misc\cpp\imgui_stdlib.cpp" />
+    <ClCompile Include="src\gui\InfoOverlay.cpp" />
     <ClCompile Include="src\entities\Camera.cpp" />
     <ClCompile Include="src\entities\Transform.cpp" />
     <ClCompile Include="src\convars\ConVars.cpp" />
@@ -169,6 +170,7 @@
     <ClInclude Include="dependencies\include\imgui\imstb_textedit.h" />
     <ClInclude Include="dependencies\include\imgui\imstb_truetype.h" />
     <ClInclude Include="dependencies\include\imgui\misc\cpp\imgui_stdlib.h" />
+    <ClInclude Include="src\gui\InfoOverlay.h" />
     <ClInclude Include="src\entities\Camera.h" />
     <ClInclude Include="src\entities\Transform.h" />
     <ClInclude Include="src\Application.h" />
