@@ -463,6 +463,8 @@
     <ClInclude Include="dependencies\include\GLFW\glfw3.h" />
     <ClInclude Include="dependencies\include\GLFW\glfw3native.h" />
     <ClInclude Include="dependencies\include\KHR\khrplatform.h" />
+    <ClInclude Include="src\misc\Printable.h" />
+    <ClInclude Include="src\misc\StringUtils.h" />
     <ClInclude Include="src\shader-loader\ShaderLoader.h" />
     <ClInclude Include="src\shapes\Triangle.h" />
     <ClInclude Include="src\stb\stb_image.h" />

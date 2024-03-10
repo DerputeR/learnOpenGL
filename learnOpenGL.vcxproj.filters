@@ -1001,6 +1001,12 @@
     <ClInclude Include="src\gui\InfoOverlay.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\misc\Printable.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\misc\StringUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="resources\shaders\vertex_basic.glsl" />

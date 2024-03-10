@@ -2,16 +2,16 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 
-void Camera::set_position(const glm::vec3& pos)
+void Camera::setPosition(const glm::vec3& pos)
 {
-	dirty_flag |= kDirtyFlagView;
-	Transform::set_position(pos);
+	dirtyFlag |= kDirtyFlagView;
+	Transform::setPosition(pos);
 }
 
-void Camera::set_angles(const glm::vec3& angles)
+void Camera::setAngles(const glm::vec3& angles)
 {
-	dirty_flag |= kDirtyFlagView;
-	Transform::set_angles(angles);
+	dirtyFlag |= kDirtyFlagView;
+	Transform::setAngles(angles);
 }
 
 Camera::Camera() : Camera(glm::vec3{0.0f}, glm::vec3{ 0.0f })
@@ -24,13 +24,13 @@ Camera::Camera(const glm::vec3& pos, const glm::vec3& angles) : Transform(pos, g
 
 void Camera::RebuildViewMatrix()
 {
-	dirty_flag = dirty_flag & (~(kDirtyFlagView));
-	view_matrix = glm::lookAt(position, position - GetForward(), GetUp());
+	dirtyFlag = dirtyFlag & (~(kDirtyFlagView));
+	view_matrix = glm::lookAt(position, position - getForward(), getUp());
 }
 
 glm::mat4 Camera::GetViewMatrix()
 {
-	if ((dirty_flag & kDirtyFlagView) != 0) {
+	if ((dirtyFlag & kDirtyFlagView) != 0) {
 		RebuildViewMatrix();
 	}
 	return view_matrix;

@@ -10,6 +10,7 @@
 #include <imgui/backends/imgui_impl_glfw.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 #include "gui/InfoOverlay.h"
+#include "misc/Printable.h"
 
 const int kDefaultWindowWidth = 800;
 const int kDefaultWindowHeight = 600;
@@ -80,6 +81,19 @@ double mouseY = 0.0;
 // GUI stuff
 static bool* is_overlay_visible = &user_input::show_debug_overlay;
 
+// debug overlay props
+static std::vector<Printable*> propsToPrint{ };
+static auto infoMouse = GUI::Debug::LabeledVec2<double>{ "Mouse", "x", &mouseX, "y", &mouseY};
+static auto infoCamRot = GUI::Debug::LabeledVec2<float>("Cam rot", "x", &camPitch, "y", &camYaw);
+static auto infoCamPos = GUI::Debug::LabeledVec3<float>("Cam pos", "x", "y", "z", cam.getPositionPointer());
+//static auto infoCamPos = GUI::Debug::NamedValueItemReference<double>{ "Cam pos", &mouseY };
+//std::cout << "cam rotation: " << camYaw << " " << camPitch << "                         " << std::endl;
+//std::cout << "cam position: " << camPos.x << ", " << camPos.y << ", " << camPos.z << "                           " << std::endl;
+//std::cout << "forward_: " << forward_.x << ", " << forward_.y << ", " << forward_.z << "                           " << std::endl;
+//std::cout << "right_: " << right_.x << ", " << right_.y << ", " << right_.z << "                           " << std::endl;
+//std::cout << "up_:" << up_.x << ", " << up_.y << ", " << up_.z << "                           " << std::endl;
+//std::cout << "delta_: " << delta_.x << ", " << delta_.y << ", " << delta_.z << "                           " << std::endl;
+
 glm::mat4 UpdateProjectionMatrix(bool perspective) {
 	if (!perspective) {
 		return glm::ortho(
@@ -142,15 +156,15 @@ void UpdateViewMatrix() {
 	float camPitch_ = static_cast<float>(static_cast<int>(camPitch / 15.0f) * 15.0f);
 	float camYaw_ = static_cast<float>(static_cast<int>(camYaw / 15.0f) * 15.0f);
 
-	cam.set_angles(glm::vec3{-camPitch, -camYaw, 0.0f});
+	cam.setAngles(glm::vec3{-camPitch, -camYaw, 0.0f});
 
-	forward_ = cam.GetForward();
-	right_ = cam.GetRight();
-	up_ = cam.GetUp();
+	forward_ = cam.getForward();
+	right_ = cam.getRight();
+	up_ = cam.getUp();
 
 	glm::vec3 delta = static_cast<float>(deltaTime) * (camVel.x * right_ + camVel.y * up_ - camVel.z * forward_);
 	delta_ = delta;
-	cam.set_position(cam.get_position() + delta);
+	cam.setPosition(cam.getPosition() + delta);
 
 	viewMatrix = cam.GetViewMatrix();
 
@@ -388,7 +402,7 @@ int main() {
 	}
 
 	std::cout << "Generated textures with ids: ";
-	int textureCount = textures.size();
+	size_t textureCount = textures.size();
 	for (int i = 0; i < textureCount; i++) {
 		std::cout << textures[i];
 		if (i + 1 != textureCount) {
@@ -475,6 +489,11 @@ int main() {
 
 	glEnable(GL_DEPTH_TEST);
 
+	// setup debug props
+	propsToPrint.emplace_back(&infoMouse);
+	propsToPrint.emplace_back(&infoCamRot);
+	propsToPrint.emplace_back(&infoCamPos);
+
 	while (!glfwWindowShouldClose(window)) {
 		lastTime = currentTime;
 		currentTime = glfwGetTime();
@@ -498,7 +517,9 @@ int main() {
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 		//ImGui::ShowDemoWindow();
-		if (*is_overlay_visible) { GUI::Debug::ShowOverlay(is_overlay_visible); }
+		if (*is_overlay_visible) {
+			GUI::Debug::showOverlay(is_overlay_visible, &propsToPrint);
+		}
 
 		// update matrices
 		UpdateModelMatrix();

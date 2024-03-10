@@ -12,7 +12,7 @@ class ShaderLoader {
 	static std::string TypeToName(unsigned int type);
 	static unsigned int CompileShader(unsigned int type, const std::string& source);
 public:
-	static struct ShaderSources {
+	struct ShaderSources {
 		std::string vertShaderSrc;
 		std::string fragShaderSrc;
 	};

@@ -10,11 +10,11 @@ static const int kDirtyFlagScale = 1 << 3;
 class Transform
 {
 protected:
-	int dirty_flag = ~0;
-	glm::mat4 rotation_matrix;
-	glm::mat4 transform_matrix;
-	void RebuildTransformMatrix();
-	void RebuildRotationMatrix();
+	int dirtyFlag = ~0;
+	glm::mat4 rotationMatrix;
+	glm::mat4 transformMatrix;
+	void rebuildTransformMatrix();
+	void rebuildRotationMatrix();
 	glm::vec3 position;
 	glm::vec3 scale;
 	// todo: replace with quaternions
@@ -23,18 +23,21 @@ public:
 	Transform();
 	Transform(const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& angles);
 	//Transform(const glm::mat4& transform_matrix);
-	glm::vec3 get_position();
-	glm::vec3 get_scale();
-	glm::vec3 get_angles();
-	virtual void set_position(const glm::vec3& pos);
-	virtual void set_scale(const glm::vec3& scale);
-	virtual void set_angles(const glm::vec3& angles);
-	glm::mat4 GetTransformMatrix();
-	glm::mat4 GetRotationMatrix();
-	glm::mat4 GetScaleMatrix();
-	glm::mat4 GetTranslationMatrix();
-	glm::vec3 GetForward();
-	glm::vec3 GetUp();
-	glm::vec3 GetRight();
+	glm::vec3 getPosition();
+	glm::vec3 getScale();
+	glm::vec3 getAngles();
+	glm::vec3* getPositionPointer();
+	glm::vec3* getScalePointer();
+	glm::vec3* getAnglesPointer();
+	virtual void setPosition(const glm::vec3& pos);
+	virtual void setScale(const glm::vec3& scale);
+	virtual void setAngles(const glm::vec3& angles);
+	glm::mat4 getTransformMatrix();
+	glm::mat4 getRotationMatrix();
+	glm::mat4 getScaleMatrix();
+	glm::mat4 getTranslationMatrix();
+	glm::vec3 getForward();
+	glm::vec3 getUp();
+	glm::vec3 getRight();
 };
 

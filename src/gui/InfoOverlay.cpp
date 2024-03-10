@@ -1,13 +1,18 @@
 #include "InfoOverlay.h"
 #include <imgui/imgui.h>
+#include <ostream>
 
-void GUI::Debug::ShowOverlay(bool* open) {
+void GUI::Debug::showOverlay(bool* open) {
+    showOverlay(open, nullptr);
+}
+
+void GUI::Debug::showOverlay(bool* open, std::vector<Printable*>* props) {
     static int location = 0;
     ImGuiIO& io = ImGui::GetIO();
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_AlwaysAutoResize;
 
     if (location >= 0) {
-        const float PAD = 10.0f;
+        const float PAD = 5.0f;
         const ImGuiViewport* viewport = ImGui::GetMainViewport();
         ImVec2 work_pos = viewport->WorkPos; // Use work area to avoid menu-bar/task-bar, if any!
         ImVec2 work_size = viewport->WorkSize;
@@ -23,19 +28,23 @@ void GUI::Debug::ShowOverlay(bool* open) {
         ImGui::SetNextWindowViewport(viewport->ID);
         window_flags |= ImGuiWindowFlags_NoMove;
     }
-    
+
     ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
-    
+
     if (ImGui::Begin("Debug info overlay", open, window_flags)) {
         ImGui::Text("Debug info");
         ImGui::Separator();
 
         if (ImGui::IsMousePosValid()) {
             ImGui::Text("Mouse Position: (%.1f,%.1f)", io.MousePos.x, io.MousePos.y);
-        } else {
+        }
+        else {
             ImGui::Text("Mouse Position: <invalid>");
         }
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+        for (auto p : *props) {
+            ImGui::Text("%s", p->toString().c_str());
+        }
 
         if (ImGui::BeginPopupContextWindow()) {
             if (ImGui::MenuItem("Custom", NULL, location == -1)) { location = -1; }
