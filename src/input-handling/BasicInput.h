@@ -1,13 +1,8 @@
 #pragma once
 #include <vector>
+#include <imgui.h>
 
 namespace basic_input {
-
-#ifdef GLFW_KEY_UNKNOWN
-	const int kKeyUnknown = GLFW_KEY_UNKNOWN;
-#else GLFW_KEY_UNKNOWN
-	const int kKeyUnknown = -1;
-#endif
 
 	enum KeyStatus : char {
 		kStatusUnknown = 0,
@@ -37,11 +32,11 @@ namespace basic_input {
 		KeyStatus prev_status = KeyStatus::kStatusUp;
 	public:
 		float activation_threshold = 0.0f;
-		int keycode = kKeyUnknown;
+		ImGuiKey keycode = ImGuiKey_None;
 
 		KeyInput(float starting_normalized_value);
-		KeyInput(float starting_normalized_value, int keycode);
-		KeyInput(float starting_normalized_value, int keycode, float threshold);
+		KeyInput(float starting_normalized_value, ImGuiKey keycode);
+		KeyInput(float starting_normalized_value, ImGuiKey keycode, float threshold);
 
 		bool WasKeyJustPressed();
 		bool WasKeyJustReleased();
@@ -52,31 +47,4 @@ namespace basic_input {
 		float get_normalized_value() override;
 		float get_prev_normalized_value() override;
 	};
-
-	//template <typename T>
-	//class TrackedValue {
-	//	std::vector<T> value_history{ 2, {} };
-	//	int current = 0;
-	//public:
-	//	TrackedValue() {
-	//		value_history[0] = T{};
-	//	}
-	//	TrackedValue(T init) {
-	//		value_history[0] = init;
-	//	}
-	//	T get() const {
-	//		return value_history[current];
-	//	}
-	//	T get(int index) const {
-	//		index = index % value_history.size();
-	//		return value_history[current];
-	//	}
-	//	void set(T value) {
-	//		current = (current + 1) % value_history.size();
-	//		value_history[current] = value;
-	//	}
-	//	void operator=(const T &right) {
-	//		set(right);
-	//	}
-	//};
 };

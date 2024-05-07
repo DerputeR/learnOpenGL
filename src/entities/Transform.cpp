@@ -40,17 +40,17 @@ Transform::Transform(const glm::vec3& pos, const glm::vec3& scale, const glm::ve
 
 }
 
-glm::vec3 Transform::getPosition()
+glm::vec3 Transform::getPosition() const
 {
 	return glm::vec3{ position };
 }
 
-glm::vec3 Transform::getScale()
+glm::vec3 Transform::getScale() const
 {
 	return glm::vec3{ scale };
 }
 
-glm::vec3 Transform::getAngles()
+glm::vec3 Transform::getAngles() const
 {
 	return glm::vec3{ angles };
 }

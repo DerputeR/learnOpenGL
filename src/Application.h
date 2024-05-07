@@ -5,13 +5,14 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/norm.hpp>
+#include <imgui/imgui.h>
 
 glm::mat4 UpdateProjectionMatrix(bool perspective = true);
 void UpdateTransformMatrix();
 void UpdateModelMatrix();
 void UpdateViewMatrix();
 
-void PollInput(GLFWwindow* window);
+void PollInput(GLFWwindow* window, ImGuiIO& io);
 void ProcessInput(GLFWwindow *window);
 void ToggleCursorLock(GLFWwindow* window, bool locked);
 

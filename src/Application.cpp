@@ -11,6 +11,7 @@
 #include <imgui/backends/imgui_impl_opengl3.h>
 #include "gui/InfoOverlay.h"
 #include "misc/Printable.h"
+#include "entities/player/Player.h"
 
 const int kDefaultWindowWidth = 800;
 const int kDefaultWindowHeight = 600;
@@ -29,6 +30,7 @@ double deltaTime = 0.0;
 
 // matrices
 static glm::mat4 modelMatrix{ 1.0f };
+static glm::mat4 viewMatrix{ 1.0f };
 static glm::mat4 transform{ 1.0f }; // single arg appears to just scale the identity matrix; no arg gives null (all 0s) matrix
 static float rotationDeg = 0;
 static glm::vec3 translation{ 0.0f, -0.3f, 0.0f };
@@ -41,58 +43,29 @@ glm::vec3 world_right{ 1.0f, 0.0f, 0.0f };
 glm::vec3 world_forward{ 0.0f, 0.0f, 1.0f };
 
 // Camera
-bool use_perspective = true;
 bool cursor_locked = false;
-static float vFov = 90.0f;
-glm::vec3 camPos = glm::vec3(0.0f, 0.0f, 1.0f);
-glm::vec3 camVel = glm::vec3(0.0f);
-float camSpeed = 1.0f;
-float camPitch = 0.0f;
-float camYaw = 0.0f;
-
-Camera cam{ camPos, glm::vec3{camPitch, camYaw, 0.0f} };
-
-glm::vec3 camDir = -world_forward;
-glm::vec3 camRight = glm::normalize(glm::cross(world_up, -camDir));
-glm::vec3 camUp = glm::cross(camDir, camRight);
-
-glm::vec3 forward_ = world_forward;
-glm::vec3 right_ = world_right;
-glm::vec3 up_ = world_up;
-glm::vec3 delta_{ };
+Player player{ glm::vec3{0.0f, 0.0f, 1.0f}, glm::vec3{0.0f, 0.0f, 0.0f} };
+Camera* cam = player.getCamera();
 
 // todo: replace with custom version
-static glm::mat4 viewMatrix = glm::lookAt(
-	glm::vec3{ 0.0f },	 // cam start position
-	-world_forward,      // cam direction is opposite of its physical forward vector
-	world_up             // world up direction
-);
-
-// is fine at 90 but cs does 89 for its own broken reasons
-float pitch_max = 89.0f;
-float pitch_min = -89.0f;
-
-float sensitivity = 1.3f;
-float m_pitch = 0.022f;
-float m_yaw = 0.022f;
-double mouseX = 0.0;
-double mouseY = 0.0;
+//static glm::mat4 viewMatrix = glm::lookAt(
+//	glm::vec3{ 0.0f },	 // cam start position
+//	-world_forward,      // cam direction is opposite of its physical forward vector
+//	world_up             // world up direction
+//);
 
 // GUI stuff
 static bool* is_overlay_visible = &user_input::show_debug_overlay;
 
 // debug overlay props
 static std::vector<Printable*> propsToPrint{ };
-static auto infoMouse = GUI::Debug::LabeledVec2<double>{ "Mouse", "x", &mouseX, "y", &mouseY};
-static auto infoCamRot = GUI::Debug::LabeledVec2<float>("Cam rot", "x", &camPitch, "y", &camYaw);
-static auto infoCamPos = GUI::Debug::LabeledVec3<float>("Cam pos", "x", "y", "z", cam.getPositionPointer());
-//static auto infoCamPos = GUI::Debug::NamedValueItemReference<double>{ "Cam pos", &mouseY };
-//std::cout << "cam rotation: " << camYaw << " " << camPitch << "                         " << std::endl;
-//std::cout << "cam position: " << camPos.x << ", " << camPos.y << ", " << camPos.z << "                           " << std::endl;
-//std::cout << "forward_: " << forward_.x << ", " << forward_.y << ", " << forward_.z << "                           " << std::endl;
-//std::cout << "right_: " << right_.x << ", " << right_.y << ", " << right_.z << "                           " << std::endl;
-//std::cout << "up_:" << up_.x << ", " << up_.y << ", " << up_.z << "                           " << std::endl;
-//std::cout << "delta_: " << delta_.x << ", " << delta_.y << ", " << delta_.z << "                           " << std::endl;
+
+static float mouseX = 0.0;
+static float mouseY = 0.0;
+
+static auto infoMouse = GUI::Debug::LabeledVec2<float>{ "Mouse", "x", &mouseX, "y", &mouseY};
+static auto infoCamRot = GUI::Debug::LabeledVec3<float>("Cam rot", "pitch", "yaw", "roll", cam->getAnglesPointer());
+static auto infoPlayerPos = GUI::Debug::LabeledVec3<float>("Player pos", "x", "y", "z", player.getPositionPointer());
 
 glm::mat4 UpdateProjectionMatrix(bool perspective) {
 	if (!perspective) {
@@ -106,7 +79,7 @@ glm::mat4 UpdateProjectionMatrix(bool perspective) {
 		);
 	}
 	else {
-		return glm::perspective(glm::radians(vFov), (float)windowWidth / (float)windowHeight, 0.1f, 100.0f);
+		return glm::perspective(glm::radians(cam->getVerticalFov()), (float)windowWidth / (float)windowHeight, 0.1f, 100.0f);
 	}
 }
 
@@ -118,7 +91,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	windowWidth = width;
 	windowHeight = height;
 	glViewport(0, 0, width, height);
-	projectionMatrix = UpdateProjectionMatrix(use_perspective);
+	projectionMatrix = UpdateProjectionMatrix(cam->usePerspective);
 }
 
 void window_iconify_callback(GLFWwindow* window, int iconified) {
@@ -146,44 +119,54 @@ void UpdateModelMatrix() {
 
 void UpdateViewMatrix() {
 	if (cursor_locked) {
-		camPitch = clip(static_cast<float>(camPitch + (mouseY * m_pitch * sensitivity)), pitch_min, pitch_max);
-		camYaw = wrap(static_cast<float>(camYaw + (mouseX * m_yaw * sensitivity)), 0.0f, 360.0f);
+		cam->setPitch(clip(cam->getPitch() + (mouseY * player.m_pitch * player.sensitivity), player.pitchMin, player.pitchMax));
+		cam->setYaw(wrap(cam->getYaw() + (mouseX * player.m_yaw * player.sensitivity), -180.0f, 180.0f));
+		//camPitch = clip(static_cast<float>(camPitch + (mouseY * m_pitch * sensitivity)), pitch_min, pitch_max);
+		//camYaw = wrap(static_cast<float>(camYaw + (mouseX * m_yaw * sensitivity)), -180.0f, 180.0f);
 	}
 
 	glm::mat4 camRot{ 1.0f };
 
 	// quantize
-	float camPitch_ = static_cast<float>(static_cast<int>(camPitch / 15.0f) * 15.0f);
-	float camYaw_ = static_cast<float>(static_cast<int>(camYaw / 15.0f) * 15.0f);
+	//float camPitch_ = static_cast<float>(static_cast<int>(camPitch / 15.0f) * 15.0f);
+	//float camYaw_ = static_cast<float>(static_cast<int>(camYaw / 15.0f) * 15.0f);
 
-	cam.setAngles(glm::vec3{-camPitch, -camYaw, 0.0f});
+	//cam->setAngles(glm::vec3{-camPitch, -camYaw, 0.0f});
 
-	forward_ = cam.getForward();
-	right_ = cam.getRight();
-	up_ = cam.getUp();
+	glm::vec3* vel = player.getVelocityPointer();
+	glm::vec3 delta = static_cast<float>(deltaTime) * (vel->x * cam->getRight() + vel->y * cam->getUp() - vel->z * cam->getForward());
+	player.setPosition(player.getPosition() + delta);
 
-	glm::vec3 delta = static_cast<float>(deltaTime) * (camVel.x * right_ + camVel.y * up_ - camVel.z * forward_);
-	delta_ = delta;
-	cam.setPosition(cam.getPosition() + delta);
-
-	viewMatrix = cam.GetViewMatrix();
+	viewMatrix = cam->GetViewMatrix();
 
 }
 
 // todo: figure out how to not be forced to pass a window pointer everywhere
-void PollInput(GLFWwindow* window) {
+void PollInput(GLFWwindow* window, ImGuiIO& io) {
 	// keys
 	for (int i = 0; i < user_input::key_inputs.size(); i++) {
-		float key_value = static_cast<float>(glfwGetKey(window, user_input::key_inputs[i]->keycode));
+		float key_value = static_cast<float>(ImGui::IsKeyDown(static_cast<ImGuiKey>(user_input::key_inputs[i]->keycode)));
 		user_input::key_inputs[i]->set_normalized_value(key_value);
 	}
 	user_input::ProcessInputs(static_cast<float>(deltaTime));
 
 	// mouse
-	glfwGetCursorPos(window, &mouseX, &mouseY);
-	if (cursor_locked) {
-		glfwSetCursorPos(window, 0, 0);
+	//glfwGetCursorPos(window, &mouseX, &mouseY);
+	if (cursor_locked)
+	{
+		mouseX = io.MouseDelta.x;
+		mouseY = io.MouseDelta.y;
+		//glfwSetCursorPos(window, 0, 0);
+		//io.MousePos.x = 0.0f; // don't write to this as it screws up the delta calculation
+		//io.MousePos.y = 0.0f;
 	}
+	else {
+		mouseX = io.MousePos.x;
+		mouseY = io.MousePos.y;
+	}
+	
+
+
 }
 
 // todo: give keys an associated convar/action it can execute on process, which will pass its state so that the action can determine how it behaves
@@ -201,10 +184,7 @@ void ProcessInput(GLFWwindow* window) {
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
 
-	if (user_input::perspective_enabled != use_perspective) {
-		use_perspective = user_input::perspective_enabled;
-		projectionMatrix = UpdateProjectionMatrix(use_perspective);
-	}
+	cam->usePerspective = user_input::perspective_enabled;
 
 	percent = user_input::alpha_value;
 
@@ -218,10 +198,10 @@ void ProcessInput(GLFWwindow* window) {
 	float sMove = user_input::move_right - user_input::move_left;
 
 	if (fMove != 0.0f || sMove != 0.0f) {
-		camVel = camSpeed * glm::normalize(glm::vec3{ sMove, 0.0f, fMove });
+		player.setVelocity(10.0f * glm::normalize(glm::vec3{ sMove, 0.0f, fMove }));
 	}
 	else {
-		camVel = glm::vec3{ 0.0f };
+		player.setVelocity(glm::vec3{ 0 });
 	}
 
 	// don't read value stored in user_input because i'm lazy
@@ -230,9 +210,9 @@ void ProcessInput(GLFWwindow* window) {
 		ToggleCursorLock(window, cursor_locked);
 	}
 
-	if (cursor_locked) {
+	/*if (cursor_locked) {
 		glfwSetCursorPos(window, 0, 0);
-	}
+	}*/
 }
 
 void ToggleCursorLock(GLFWwindow* window, bool locked) {
@@ -240,8 +220,6 @@ void ToggleCursorLock(GLFWwindow* window, bool locked) {
 		glfwSetCursorPos(window, windowWidth / 2, windowHeight / 2);
 		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 		glfwSetCursorPos(window, 0, 0);
-		mouseX = 0.0f;
-		mouseY = 0.0f;
 	}
 	else {
 		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
@@ -288,15 +266,15 @@ int main() {
 		std::cout << "Raw input is supported, enabling" << std::endl;
 	}
 
-	ToggleCursorLock(window, cursor_locked);
-
 	// imgui init
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
-	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+	io.ConfigFlags |= (ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableSetMousePos);
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init();
+
+	//ToggleCursorLock(window, cursor_locked);
 
 	// temporary vertices for a vertically stretched cube
 	float vertices[] = {
@@ -484,7 +462,7 @@ int main() {
 	glUniform1i(texture0UniformLocation, 0);
 	glUniform1i(texture1UniformLocation, 1);
 
-	projectionMatrix = UpdateProjectionMatrix(user_input::perspective_enabled);
+	projectionMatrix = UpdateProjectionMatrix(cam->usePerspective);
 	UpdateTransformMatrix();
 
 	glEnable(GL_DEPTH_TEST);
@@ -492,7 +470,7 @@ int main() {
 	// setup debug props
 	propsToPrint.emplace_back(&infoMouse);
 	propsToPrint.emplace_back(&infoCamRot);
-	propsToPrint.emplace_back(&infoCamPos);
+	propsToPrint.emplace_back(&infoPlayerPos);
 
 	while (!glfwWindowShouldClose(window)) {
 		lastTime = currentTime;
@@ -507,15 +485,16 @@ int main() {
 		//glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
 		//glBindVertexArray(NULL);
 
-		// input
-		glfwPollEvents();
-		PollInput(window);
-		ProcessInput(window);
-
 		// start ImGui frame
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
+
+		// input
+		glfwPollEvents();
+		PollInput(window, io);
+		ProcessInput(window);
+
 		//ImGui::ShowDemoWindow();
 		if (*is_overlay_visible) {
 			GUI::Debug::showOverlay(is_overlay_visible, &propsToPrint);
@@ -524,15 +503,6 @@ int main() {
 		// update matrices
 		UpdateModelMatrix();
 		UpdateViewMatrix();
-
-		//std::cout << "x: " << mouseX << ", y: " << mouseY << "                         " << std::endl;
-		//std::cout << "cam rotation: " << camYaw << " " << camPitch << "                         " << std::endl;
-		//std::cout << "cam position: " << camPos.x << ", " << camPos.y << ", " << camPos.z << "                           " << std::endl;
-		//std::cout << "forward_: " << forward_.x << ", " << forward_.y << ", " << forward_.z << "                           " << std::endl;
-		//std::cout << "right_: " << right_.x << ", " << right_.y << ", " << right_.z << "                           " << std::endl;
-		//std::cout << "up_:" << up_.x << ", " << up_.y << ", " << up_.z << "                           " << std::endl;
-		//std::cout << "delta_: " << delta_.x << ", " << delta_.y << ", " << delta_.z << "                           " << std::endl;
-		//std::cout << "\033[A\033[A\033[A\033[A\033[A\033[A\033[A\r";
 
 		// clear last render
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);

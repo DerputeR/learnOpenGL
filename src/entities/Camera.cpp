@@ -14,6 +14,37 @@ void Camera::setAngles(const glm::vec3& angles)
 	Transform::setAngles(angles);
 }
 
+float Camera::getPitch()
+{
+	return angles.x;
+}
+
+void Camera::setPitch(float degrees)
+{
+	setAngles(glm::vec3{ degrees, angles.y, angles.z });
+}
+
+float Camera::getYaw()
+{
+	return angles.y;
+}
+
+void Camera::setYaw(float degrees)
+{
+	setAngles(glm::vec3{angles.x, degrees, angles.z});
+}
+
+float Camera::getVerticalFov()
+{
+	return vFov;
+}
+
+void Camera::setVerticalFov(float degrees)
+{
+	vFov = degrees;
+	dirtyFlag |= kDirtyFlagView;
+}
+
 Camera::Camera() : Camera(glm::vec3{0.0f}, glm::vec3{ 0.0f })
 {
 }
@@ -25,7 +56,7 @@ Camera::Camera(const glm::vec3& pos, const glm::vec3& angles) : Transform(pos, g
 void Camera::RebuildViewMatrix()
 {
 	dirtyFlag = dirtyFlag & (~(kDirtyFlagView));
-	view_matrix = glm::lookAt(position, position - getForward(), getUp());
+	viewMatrix = glm::lookAt(position, position - getForward(), getUp());
 }
 
 glm::mat4 Camera::GetViewMatrix()
@@ -33,5 +64,5 @@ glm::mat4 Camera::GetViewMatrix()
 	if ((dirtyFlag & kDirtyFlagView) != 0) {
 		RebuildViewMatrix();
 	}
-	return view_matrix;
+	return viewMatrix;
 }

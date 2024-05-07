@@ -1,7 +1,6 @@
 #pragma once
 #include "BasicInput.h"
-#include "glad/glad.h"
-#include "GLFW/glfw3.h"
+#include <imgui.h>
 #include <vector>
 
 namespace user_input {

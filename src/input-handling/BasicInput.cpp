@@ -69,8 +69,8 @@ basic_input::Input::Input(float starting_normalized_value)
 basic_input::KeyInput::KeyInput(float starting_normalized_value)
 	: Input{ starting_normalized_value } { }
 
-basic_input::KeyInput::KeyInput(float starting_normalized_value, int keycode)
+basic_input::KeyInput::KeyInput(float starting_normalized_value, ImGuiKey keycode)
 	: Input{ starting_normalized_value }, keycode{ keycode } { }
 
-basic_input::KeyInput::KeyInput(float starting_normalized_value, int keycode, float threshold)
+basic_input::KeyInput::KeyInput(float starting_normalized_value, ImGuiKey keycode, float threshold)
 	: Input{ starting_normalized_value }, keycode{ keycode }, activation_threshold{ threshold } { }

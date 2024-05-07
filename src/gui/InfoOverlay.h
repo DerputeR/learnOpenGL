@@ -58,7 +58,7 @@ namespace GUI {
 		struct LabeledVec3 : Printable {
 			std::string name;
 			std::string labels[3];
-			const T* values[3];
+			const T* values[3] {};
 			const glm::vec3* vecPtr;
 
 			LabeledVec3(std::string name, std::string xName, const T* xPtr, std::string yName, const T* yPtr, std::string zName, const T* zPtr)

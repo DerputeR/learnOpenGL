@@ -16,21 +16,21 @@ namespace user_input {
 	float roll_degrees = 0.0f;
 	bool show_debug_overlay = true;
 
-	basic_input::KeyInput in_toggle_cursor_lock{ 0.0f, GLFW_KEY_C };
-	basic_input::KeyInput in_quit{ 0.0f, GLFW_KEY_ESCAPE };
-	basic_input::KeyInput in_toggle_wireframe{ 0.0f, GLFW_KEY_TAB };
-	basic_input::KeyInput in_toggle_perspective{ 0.0f, GLFW_KEY_F5 };
-	basic_input::KeyInput in_move_forward{ 0.0f, GLFW_KEY_W };
-	basic_input::KeyInput in_move_left{ 0.0f, GLFW_KEY_A };
-	basic_input::KeyInput in_move_back{ 0.0f, GLFW_KEY_S };
-	basic_input::KeyInput in_move_right{ 0.0f, GLFW_KEY_D };
-	basic_input::KeyInput in_increase_alpha{ 0.0f, GLFW_KEY_UP };
-	basic_input::KeyInput in_decrease_alpha{ 0.0f, GLFW_KEY_DOWN };
-	basic_input::KeyInput in_roll_ccw{ 0.0f, GLFW_KEY_LEFT };
-	basic_input::KeyInput in_roll_cw{ 0.0f, GLFW_KEY_RIGHT };
-	basic_input::KeyInput in_scale_up{ 0.0f, GLFW_KEY_EQUAL };
-	basic_input::KeyInput in_scale_down{ 0.0f, GLFW_KEY_MINUS };
-	basic_input::KeyInput in_toggle_debug_overlay{ 0.0f, GLFW_KEY_F3 };
+	basic_input::KeyInput in_toggle_cursor_lock{ 0.0f, ImGuiKey_C };
+	basic_input::KeyInput in_quit{ 0.0f, ImGuiKey_Escape };
+	basic_input::KeyInput in_toggle_wireframe{ 0.0f, ImGuiKey_Tab };
+	basic_input::KeyInput in_toggle_perspective{ 0.0f, ImGuiKey_F5 };
+	basic_input::KeyInput in_move_forward{ 0.0f, ImGuiKey_W };
+	basic_input::KeyInput in_move_left{ 0.0f, ImGuiKey_A };
+	basic_input::KeyInput in_move_back{ 0.0f, ImGuiKey_S };
+	basic_input::KeyInput in_move_right{ 0.0f, ImGuiKey_D };
+	basic_input::KeyInput in_increase_alpha{ 0.0f, ImGuiKey_UpArrow };
+	basic_input::KeyInput in_decrease_alpha{ 0.0f, ImGuiKey_DownArrow };
+	basic_input::KeyInput in_roll_ccw{ 0.0f, ImGuiKey_LeftArrow };
+	basic_input::KeyInput in_roll_cw{ 0.0f, ImGuiKey_RightArrow };
+	basic_input::KeyInput in_scale_up{ 0.0f, ImGuiKey_Equal };
+	basic_input::KeyInput in_scale_down{ 0.0f, ImGuiKey_Minus };
+	basic_input::KeyInput in_toggle_debug_overlay{ 0.0f, ImGuiKey_F3 };
 
 	std::vector<basic_input::KeyInput*> key_inputs{
 		&in_toggle_cursor_lock, &in_quit,
