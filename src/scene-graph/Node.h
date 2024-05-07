@@ -6,17 +6,25 @@
 /**
  * @brief Class to hold nodes in a node tree.
  * NOTE: figure out how to optimally use smart pointers with this
- * 
+ * As of now, nodes are NOT owned by each other. It is assumed that they are on the heap
  * Nodes are mostly generic objects and don't do anything on their own.
  * Maybe we can turn this into a simplified component-based system, or just subclass the daylights out of it.
  */
 class Node
 {
-	std::string name;
 	Node* parent;
-	std::vector<std::unique_ptr<Node>> children;
+	std::vector<Node*> children;
+	void printTreeAtNode(const Node& node, size_t depth) const;
 
 public:
+	std::string name;
+
+	/**
+	 * @brief Destructor.
+	 * Currently prints out that this node was destroyed.
+	 */
+	~Node();
+
 	/**
 	 * @brief Creates a node without a parent
 	 * @param name - Name of this node
@@ -40,7 +48,7 @@ public:
 	 * @param child 
 	 * @return Previous parent node of `child`, if it had one.
 	 */
-	Node* addChild(std::unique_ptr<Node>& child);
+	Node* addChild(Node& child);
 
 	/**
 	 * @brief Sets the parent node of this node.
@@ -57,18 +65,20 @@ public:
 	 * If this node does not have a parent, a nullptr will be returned
 	 * @return Parent node
 	 */
-	Node* getParent();
+	Node* getParent() const;
+
+	std::vector<Node*> getChildren() const;
 
 	/**
 	 * @brief Prints the structure of this node tree using this node
 	 * as the root. 
 	 */
-	void printLocalTree();
+	void printLocalTree() const;
 
 	/**
 	 * @brief Prints the structure of this node tree using the
 	 * top-most node as the root.
 	 */
-	void printTree();
+	void printTree() const;
 };
 
