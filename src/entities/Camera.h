@@ -14,8 +14,8 @@ public:
 	Camera();
 	Camera(const glm::vec3& pos, const glm::vec3& angles);
 	glm::mat4 GetViewMatrix();
-	void setPosition(const glm::vec3& pos) override;
-	void setAngles(const glm::vec3& angles) override;
+	void setLocalPosition(const glm::vec3& pos) override;
+	void setLocalAngles(const glm::vec3& angles) override;
 	float getPitch();
 	void setPitch(float degrees);
 	float getYaw();

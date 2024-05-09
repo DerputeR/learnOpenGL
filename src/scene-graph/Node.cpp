@@ -1,16 +1,15 @@
 #include "Node.h"
 #include <iostream>
 
-Node::Node(std::string name) : parent { nullptr }
+Node::Node(const std::string& name) : parent { nullptr }
 {
 	this->name = name;
 }
 
-Node::Node(std::string name, Node& parent) : parent { &parent }
+Node::Node(const std::string& name, Node& parent) : parent { &parent }
 {
 	this->name = name;
 	this->parent = &parent;
-	// is this even legal??
 	parent.children.push_back(this);
 }
 
@@ -63,12 +62,17 @@ Node* Node::getParent() const
 	return this->parent;
 }
 
+Node* Node::removeFromParent()
+{
+	return setParent(nullptr);
+}
+
 std::vector<Node*> Node::getChildren() const
 {
 	return this->children;
 }
 
-void Node::printTreeAtNode(const Node& node, size_t depth) const
+void Node::printTreeAtNode(const Node& node, size_t depth)
 {
 	std::string indent;
 	indent.reserve(4 * depth);

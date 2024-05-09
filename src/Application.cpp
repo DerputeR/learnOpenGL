@@ -64,8 +64,8 @@ static float mouseX = 0.0;
 static float mouseY = 0.0;
 
 static auto infoMouse = GUI::Debug::LabeledVec2<float>{ "Mouse", "x", &mouseX, "y", &mouseY};
-static auto infoCamRot = GUI::Debug::LabeledVec3<float>("Cam rot", "pitch", "yaw", "roll", cam->getAnglesPointer());
-static auto infoPlayerPos = GUI::Debug::LabeledVec3<float>("Player pos", "x", "y", "z", player.getPositionPointer());
+static auto infoCamRot = GUI::Debug::LabeledVec3<float>("Cam rot", "pitch", "yaw", "roll", cam->getLocalAnglesPointer());
+static auto infoPlayerPos = GUI::Debug::LabeledVec3<float>("Player pos", "x", "y", "z", player.getLocalPositionPointer());
 
 glm::mat4 UpdateProjectionMatrix(bool perspective) {
 	if (!perspective) {
@@ -135,7 +135,7 @@ void UpdateViewMatrix() {
 
 	glm::vec3* vel = player.getVelocityPointer();
 	glm::vec3 delta = static_cast<float>(deltaTime) * (vel->x * cam->getRight() + vel->y * cam->getUp() - vel->z * cam->getForward());
-	player.setPosition(player.getPosition() + delta);
+	player.setLocalPosition(player.getLocalPosition() + delta);
 
 	viewMatrix = cam->GetViewMatrix();
 

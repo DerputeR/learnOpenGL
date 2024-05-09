@@ -14,7 +14,7 @@ class Node
 {
 	Node* parent;
 	std::vector<Node*> children;
-	void printTreeAtNode(const Node& node, size_t depth) const;
+	static void printTreeAtNode(const Node& node, size_t depth);
 
 public:
 	std::string name;
@@ -29,7 +29,7 @@ public:
 	 * @brief Creates a node without a parent
 	 * @param name - Name of this node
 	 */
-	Node(std::string name);
+	Node(const std::string& name);
 
 	/**
 	 * @brief Creates a node with a parent
@@ -38,7 +38,7 @@ public:
 	 * The parent node will automatically add this new node
 	 * to its vector of children.
 	 */
-	Node(std::string name, Node& parent);
+	Node(const std::string& name, Node& parent);
 
 	/**
 	 * @brief Adds a child node to this node.
@@ -66,6 +66,14 @@ public:
 	 * @return Parent node
 	 */
 	Node* getParent() const;
+
+	/**
+	 * @brief Removes this node from its parent.
+	 * Does not destroy the node or its children.
+	 * @return The removed node
+	 */
+	Node* removeFromParent();
+
 
 	std::vector<Node*> getChildren() const;
 

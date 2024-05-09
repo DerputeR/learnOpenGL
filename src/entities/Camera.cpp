@@ -2,16 +2,16 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 
-void Camera::setPosition(const glm::vec3& pos)
+void Camera::setLocalPosition(const glm::vec3& pos)
 {
 	dirtyFlag |= kDirtyFlagView;
-	Transform::setPosition(pos);
+	Transform::setLocalPosition(pos);
 }
 
-void Camera::setAngles(const glm::vec3& angles)
+void Camera::setLocalAngles(const glm::vec3& angles)
 {
 	dirtyFlag |= kDirtyFlagView;
-	Transform::setAngles(angles);
+	Transform::setLocalAngles(angles);
 }
 
 float Camera::getPitch()
@@ -21,7 +21,7 @@ float Camera::getPitch()
 
 void Camera::setPitch(float degrees)
 {
-	setAngles(glm::vec3{ degrees, angles.y, angles.z });
+	setLocalAngles(glm::vec3{ degrees, angles.y, angles.z });
 }
 
 float Camera::getYaw()
@@ -31,7 +31,7 @@ float Camera::getYaw()
 
 void Camera::setYaw(float degrees)
 {
-	setAngles(glm::vec3{angles.x, degrees, angles.z});
+	setLocalAngles(glm::vec3{angles.x, degrees, angles.z});
 }
 
 float Camera::getVerticalFov()

@@ -29,60 +29,66 @@ void Transform::rebuildRotationMatrix()
 }
 
 Transform::Transform()
-	: position{0.0f}, scale{1.0f}, angles{0.0f}, rotationMatrix{ 1.0f }, transformMatrix{ 1.0f }
+	: position{0.0f}, scale{1.0f}, angles{0.0f}, rotationMatrix{ 1.0f }, transformMatrix{ 1.0f }, Node{"Transform"}
 {
 
 }
 
 Transform::Transform(const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& angles)
-	: position{ pos }, scale{ scale }, angles{ angles }, rotationMatrix{1.0f}, transformMatrix{1.0f}
+	: position{ pos }, scale{ scale }, angles{ angles }, rotationMatrix{1.0f}, transformMatrix{1.0f}, Node {"Transform"}
 {
 
 }
 
-glm::vec3 Transform::getPosition() const
+Transform::Transform(const std::string& name, const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& angles)
+	: position{ pos }, scale{ scale }, angles{ angles }, rotationMatrix{ 1.0f }, transformMatrix{ 1.0f }, Node{ name }
+{
+
+}
+
+glm::vec3 Transform::getLocalPosition() const
 {
 	return glm::vec3{ position };
 }
 
-glm::vec3 Transform::getScale() const
+glm::vec3 Transform::getLocalScale() const
 {
 	return glm::vec3{ scale };
 }
 
-glm::vec3 Transform::getAngles() const
+glm::vec3 Transform::getLocalAngles() const
 {
 	return glm::vec3{ angles };
 }
 
-glm::vec3* Transform::getPositionPointer()
+glm::vec3* Transform::getLocalPositionPointer()
 {
 	return &position;
 }
 
-glm::vec3* Transform::getScalePointer()
+glm::vec3* Transform::getLocalScalePointer()
 {
 	return &scale;
 }
 
-glm::vec3* Transform::getAnglesPointer()
+glm::vec3* Transform::getLocalAnglesPointer()
 {
 	return &angles;
 }
 
-void Transform::setPosition(const glm::vec3& pos)
+void Transform::setLocalPosition(const glm::vec3& pos)
 {
 	dirtyFlag |= kDirtyFlagTransform | kDirtyFlagTranslation;
 	this->position = glm::vec3{ pos };
 }
 
-void Transform::setScale(const glm::vec3& scale)
+void Transform::setLocalScale(const glm::vec3& scale)
 {
 	dirtyFlag |= kDirtyFlagTransform | kDirtyFlagScale;
 	this->scale = glm::vec3{ scale };
 }
 
-void Transform::setAngles(const glm::vec3& angles)
+void Transform::setLocalAngles(const glm::vec3& angles)
 {
 	dirtyFlag |= kDirtyFlagTransform | kDirtyFlagRotation;
 	this->angles = glm::vec3{ angles };
