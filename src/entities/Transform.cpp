@@ -2,7 +2,7 @@
 #include <glm/gtc/matrix_access.hpp>
 #include <glm/ext/matrix_transform.hpp>
 
-void Transform::rebuildTransformMatrix()
+void OldTransform::rebuildTransformMatrix()
 {
 	if ((dirtyFlag & kDirtyFlagRotation) != 0) {
 		rebuildRotationMatrix();
@@ -11,7 +11,7 @@ void Transform::rebuildTransformMatrix()
 	dirtyFlag = dirtyFlag & (~(kDirtyFlagTransform | kDirtyFlagTranslation | kDirtyFlagScale));
 }
 
-void Transform::rebuildRotationMatrix()
+void OldTransform::rebuildRotationMatrix()
 {
 	float cx = glm::cos(glm::radians(angles.x));
 	float cy = glm::cos(glm::radians(angles.y));
@@ -28,73 +28,73 @@ void Transform::rebuildRotationMatrix()
 	dirtyFlag = dirtyFlag & (~kDirtyFlagRotation);
 }
 
-Transform::Transform()
-	: position{0.0f}, scale{1.0f}, angles{0.0f}, rotationMatrix{ 1.0f }, transformMatrix{ 1.0f }, Node{"Transform"}
+OldTransform::OldTransform()
+	: position{0.0f}, scale{1.0f}, angles{0.0f}, rotationMatrix{ 1.0f }, transformMatrix{ 1.0f }, Node{"OldTransform"}
 {
 
 }
 
-Transform::Transform(const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& angles)
-	: position{ pos }, scale{ scale }, angles{ angles }, rotationMatrix{1.0f}, transformMatrix{1.0f}, Node {"Transform"}
+OldTransform::OldTransform(const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& angles)
+	: position{ pos }, scale{ scale }, angles{ angles }, rotationMatrix{1.0f}, transformMatrix{1.0f}, Node {"OldTransform"}
 {
 
 }
 
-Transform::Transform(const std::string& name, const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& angles)
+OldTransform::OldTransform(const std::string& name, const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& angles)
 	: position{ pos }, scale{ scale }, angles{ angles }, rotationMatrix{ 1.0f }, transformMatrix{ 1.0f }, Node{ name }
 {
 
 }
 
-glm::vec3 Transform::getLocalPosition() const
+glm::vec3 OldTransform::getLocalPosition() const
 {
 	return glm::vec3{ position };
 }
 
-glm::vec3 Transform::getLocalScale() const
+glm::vec3 OldTransform::getLocalScale() const
 {
 	return glm::vec3{ scale };
 }
 
-glm::vec3 Transform::getLocalAngles() const
+glm::vec3 OldTransform::getLocalAngles() const
 {
 	return glm::vec3{ angles };
 }
 
-glm::vec3* Transform::getLocalPositionPointer()
+glm::vec3* OldTransform::getLocalPositionPointer()
 {
 	return &position;
 }
 
-glm::vec3* Transform::getLocalScalePointer()
+glm::vec3* OldTransform::getLocalScalePointer()
 {
 	return &scale;
 }
 
-glm::vec3* Transform::getLocalAnglesPointer()
+glm::vec3* OldTransform::getLocalAnglesPointer()
 {
 	return &angles;
 }
 
-void Transform::setLocalPosition(const glm::vec3& pos)
+void OldTransform::setLocalPosition(const glm::vec3& pos)
 {
 	dirtyFlag |= kDirtyFlagTransform | kDirtyFlagTranslation;
 	this->position = glm::vec3{ pos };
 }
 
-void Transform::setLocalScale(const glm::vec3& scale)
+void OldTransform::setLocalScale(const glm::vec3& scale)
 {
 	dirtyFlag |= kDirtyFlagTransform | kDirtyFlagScale;
 	this->scale = glm::vec3{ scale };
 }
 
-void Transform::setLocalAngles(const glm::vec3& angles)
+void OldTransform::setLocalAngles(const glm::vec3& angles)
 {
 	dirtyFlag |= kDirtyFlagTransform | kDirtyFlagRotation;
 	this->angles = glm::vec3{ angles };
 }
 
-glm::mat4 Transform::getRotationMatrix()
+glm::mat4 OldTransform::getRotationMatrix()
 {
 	if ((dirtyFlag & kDirtyFlagRotation) != 0) {
 		rebuildRotationMatrix();
@@ -102,7 +102,7 @@ glm::mat4 Transform::getRotationMatrix()
 	return rotationMatrix;
 }
 
-glm::mat4 Transform::getScaleMatrix()
+glm::mat4 OldTransform::getScaleMatrix()
 {
 	return glm::mat4{
 		scale.x, 0.0f,    0.0f,    0.0f,
@@ -112,7 +112,7 @@ glm::mat4 Transform::getScaleMatrix()
 	};
 }
 
-glm::mat4 Transform::getTranslationMatrix()
+glm::mat4 OldTransform::getTranslationMatrix()
 {
 	return glm::mat4{
 		1.0f,       0.0f,       0.0f,       0.0f,
@@ -122,7 +122,7 @@ glm::mat4 Transform::getTranslationMatrix()
 	};
 }
 
-glm::vec3 Transform::getForward()
+glm::vec3 OldTransform::getForward()
 {
 	if ((dirtyFlag & kDirtyFlagRotation) != 0) {
 		rebuildRotationMatrix();
@@ -130,7 +130,7 @@ glm::vec3 Transform::getForward()
 	return glm::column(rotationMatrix, 2);
 }
 
-glm::vec3 Transform::getUp()
+glm::vec3 OldTransform::getUp()
 {
 	if ((dirtyFlag & kDirtyFlagRotation) != 0) {
 		rebuildRotationMatrix();
@@ -138,7 +138,7 @@ glm::vec3 Transform::getUp()
 	return glm::column(rotationMatrix, 1);
 }
 
-glm::vec3 Transform::getRight()
+glm::vec3 OldTransform::getRight()
 {
 	if ((dirtyFlag & kDirtyFlagRotation) != 0) {
 		rebuildRotationMatrix();
@@ -146,11 +146,11 @@ glm::vec3 Transform::getRight()
 	return glm::column(rotationMatrix, 0);
 }
 
-//Transform::Transform(const glm::mat4& transform_matrix)
+//OldTransform::OldTransform(const glm::mat4& transform_matrix)
 //{
 //}
 
-glm::mat4 Transform::getTransformMatrix()
+glm::mat4 OldTransform::getTransformMatrix()
 {
 	// by default (GLSL and GLM) spec, matrices are defined in column-order
 	// so every set of four entries is one column vector

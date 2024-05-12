@@ -23,7 +23,7 @@ public:
 	 * @brief Destructor.
 	 * Currently prints out that this node was destroyed.
 	 */
-	~Node();
+	virtual ~Node();
 
 	/**
 	 * @brief Creates a node without a parent

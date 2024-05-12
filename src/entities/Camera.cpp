@@ -5,13 +5,13 @@
 void Camera::setLocalPosition(const glm::vec3& pos)
 {
 	dirtyFlag |= kDirtyFlagView;
-	Transform::setLocalPosition(pos);
+	OldTransform::setLocalPosition(pos);
 }
 
 void Camera::setLocalAngles(const glm::vec3& angles)
 {
 	dirtyFlag |= kDirtyFlagView;
-	Transform::setLocalAngles(angles);
+	OldTransform::setLocalAngles(angles);
 }
 
 float Camera::getPitch()
@@ -49,7 +49,7 @@ Camera::Camera() : Camera(glm::vec3{0.0f}, glm::vec3{ 0.0f })
 {
 }
 
-Camera::Camera(const glm::vec3& pos, const glm::vec3& angles) : Transform(pos, glm::vec3{1.0f}, angles)
+Camera::Camera(const glm::vec3& pos, const glm::vec3& angles) : OldTransform(pos, glm::vec3{1.0f}, angles)
 {
 }
 

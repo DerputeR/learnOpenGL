@@ -3,7 +3,7 @@
 
 static const int kDirtyFlagView = 1 << 4;
 
-class Camera : public Transform
+class Camera : public OldTransform
 {
 protected:
 	float vFov = 90.0f;

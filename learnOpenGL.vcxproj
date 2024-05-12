@@ -165,6 +165,7 @@
     <ClCompile Include="src\shapes\Triangle.cpp" />
     <ClCompile Include="src\stb\stb_image.cpp" />
     <ClCompile Include="src\input-handling\UserInputs.cpp" />
+    <ClCompile Include="src\scene-graph\Transform.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dependencies\include\imgui\backends\imgui_impl_glfw.h" />
@@ -479,6 +480,7 @@
     <ClInclude Include="src\shapes\Triangle.h" />
     <ClInclude Include="src\stb\stb_image.h" />
     <ClInclude Include="src\input-handling\UserInputs.h" />
+    <ClInclude Include="src\scene-graph\Transform.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="dependencies\include\glm\detail\func_common.inl" />

@@ -8,7 +8,7 @@ static const int kDirtyFlagTranslation = 1 << 1;
 static const int kDirtyFlagRotation = 1 << 2;
 static const int kDirtyFlagScale = 1 << 3;
 
-class Transform : public Node
+class OldTransform : public Node
 {
 protected:
 	int dirtyFlag = ~0;
@@ -21,10 +21,10 @@ protected:
 	// todo: replace with quaternions
 	glm::vec3 angles;
 public:
-	Transform();
-	Transform(const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& angles);
-	Transform(const std::string& name, const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& angles);
-	//Transform(const glm::mat4& transform_matrix);
+	OldTransform();
+	OldTransform(const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& angles);
+	OldTransform(const std::string& name, const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& angles);
+	//OldTransform(const glm::mat4& transform_matrix);
 	virtual glm::vec3 getLocalPosition() const;
 	virtual glm::vec3 getLocalScale() const;
 	virtual glm::vec3 getLocalAngles() const;
