@@ -5,7 +5,7 @@ static glm::mat4 buildRotationMatrix(const glm::vec3& angles);
 static glm::mat4 buildTranslationMatrix(const glm::vec3& position);
 static glm::mat4 buildScaleMatrix(const glm::vec3& scale);
 
-glm::mat4 Transform::buildLocalMatrix()
+glm::mat4 Transform::buildLocalMatrix() const
 {
 	glm::mat4 rotationMatrix = buildRotationMatrix(angles);
 	glm::mat4 translationMatrix = buildTranslationMatrix(position);
@@ -14,7 +14,7 @@ glm::mat4 Transform::buildLocalMatrix()
 	return transformMatrix;
 }
 
-glm::mat4 Transform::buildGlobalMatrix()
+glm::mat4 Transform::buildGlobalMatrix() const
 {
 	// todo: probably turn transform into a component attached to nodes instead
 	// of inheriting node...
@@ -76,8 +76,14 @@ Transform::Transform() :
 	position{ 0.0f },
 	scale{ 1.0f },
 	angles{ 0.0f },
-	Node{ "OldTransform" }
-{ }
+	Node{ "OldTransform" },
+	localTranslation { buildTranslationMatrix(position) },
+	localRotation{ buildRotationMatrix(angles) },
+	localScale{ buildScaleMatrix(scale) },
+	localMatrix{ buildLocalMatrix() }
+{
+
+}
 
 Transform::Transform(
 	const glm::vec3& pos,
@@ -86,7 +92,11 @@ Transform::Transform(
 	position{ pos },
 	scale{ scale },
 	angles{ angles },
-	Node{ "OldTransform" }
+	Node{ "OldTransform" },
+	localTranslation{ buildTranslationMatrix(position) },
+	localRotation{ buildRotationMatrix(angles) },
+	localScale{ buildScaleMatrix(scale) },
+	localMatrix{ buildLocalMatrix() }
 { }
 
 glm::vec3 Transform::getLocalPosition() const

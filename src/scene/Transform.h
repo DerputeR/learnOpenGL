@@ -8,13 +8,13 @@ class Transform : public Node
 	glm::vec3 scale;
 	glm::vec3 angles; // todo: replace with quaternions
 	glm::mat4 localMatrix;
-	glm::mat4 localTransform;
+	glm::mat4 localTranslation;
 	glm::mat4 localScale;
 	glm::mat4 localRotation;
 	//glm::mat4 globalMatrix; // todo: figure out how to cache this intelligently
 	
-	glm::mat4 buildLocalMatrix();
-	glm::mat4 buildGlobalMatrix();
+	glm::mat4 buildLocalMatrix() const;
+	glm::mat4 buildGlobalMatrix() const;
 public:
 	Transform();
 	Transform(const glm::vec3& pos, const glm::vec3& scale, const glm::vec3& angles);
