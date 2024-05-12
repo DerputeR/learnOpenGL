@@ -149,7 +149,7 @@
     <ClCompile Include="dependencies\include\imgui\imgui_tables.cpp" />
     <ClCompile Include="dependencies\include\imgui\imgui_widgets.cpp" />
     <ClCompile Include="dependencies\include\imgui\misc\cpp\imgui_stdlib.cpp" />
-    <ClCompile Include="src\scene-graph\Node.cpp" />
+    <ClCompile Include="src\scene\Node.cpp" />
     <ClCompile Include="src\entities\player\Player.cpp" />
     <ClCompile Include="src\entities\Entity.cpp" />
     <ClCompile Include="src\gui\InfoOverlay.cpp" />
@@ -165,7 +165,7 @@
     <ClCompile Include="src\shapes\Triangle.cpp" />
     <ClCompile Include="src\stb\stb_image.cpp" />
     <ClCompile Include="src\input-handling\UserInputs.cpp" />
-    <ClCompile Include="src\scene-graph\Transform.cpp" />
+    <ClCompile Include="src\scene\Transform.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dependencies\include\imgui\backends\imgui_impl_glfw.h" />
@@ -178,7 +178,7 @@
     <ClInclude Include="dependencies\include\imgui\imstb_textedit.h" />
     <ClInclude Include="dependencies\include\imgui\imstb_truetype.h" />
     <ClInclude Include="dependencies\include\imgui\misc\cpp\imgui_stdlib.h" />
-    <ClInclude Include="src\scene-graph\Node.h" />
+    <ClInclude Include="src\scene\Node.h" />
     <ClInclude Include="src\entities\player\Player.h" />
     <ClInclude Include="src\entities\Entity.h" />
     <ClInclude Include="src\gui\InfoOverlay.h" />
@@ -480,7 +480,7 @@
     <ClInclude Include="src\shapes\Triangle.h" />
     <ClInclude Include="src\stb\stb_image.h" />
     <ClInclude Include="src\input-handling\UserInputs.h" />
-    <ClInclude Include="src\scene-graph\Transform.h" />
+    <ClInclude Include="src\scene\Transform.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="dependencies\include\glm\detail\func_common.inl" />

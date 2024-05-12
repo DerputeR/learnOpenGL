@@ -84,7 +84,10 @@
     <ClCompile Include="src\entities\player\Player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\scene-graph\Node.cpp">
+    <ClCompile Include="src\scene\Node.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\scene\Transform.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -1022,7 +1025,10 @@
     <ClInclude Include="src\entities\player\Player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\scene-graph\Node.h">
+    <ClInclude Include="src\scene\Node.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\scene\Transform.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
