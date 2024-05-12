@@ -1,7 +1,7 @@
 #pragma once
 
 #include <glm/glm.hpp>
-#include "../scene-graph/Node.h"
+#include "../scene/Node.h"
 
 static const int kDirtyFlagTransform = 1 << 0;
 static const int kDirtyFlagTranslation = 1 << 1;

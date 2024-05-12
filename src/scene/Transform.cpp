@@ -1,6 +1,10 @@
 #include "Transform.h"
 #include <glm/gtc/matrix_access.hpp>
 
+static glm::mat4 buildRotationMatrix(const glm::vec3& angles);
+static glm::mat4 buildTranslationMatrix(const glm::vec3& position);
+static glm::mat4 buildScaleMatrix(const glm::vec3& scale);
+
 glm::mat4 Transform::buildLocalMatrix()
 {
 	glm::mat4 rotationMatrix = buildRotationMatrix(angles);
