@@ -4,34 +4,36 @@
 
 void Camera::setLocalPosition(const glm::vec3& pos)
 {
-	dirtyFlag |= kDirtyFlagView;
-	OldTransform::setLocalPosition(pos);
+	//dirtyFlag |= kDirtyFlagView;
+	Transform::setLocalPosition(pos);
+	RebuildViewMatrix();
 }
 
 void Camera::setLocalAngles(const glm::vec3& angles)
 {
-	dirtyFlag |= kDirtyFlagView;
-	OldTransform::setLocalAngles(angles);
+	//dirtyFlag |= kDirtyFlagView;
+	Transform::setLocalAngles(angles);
+	RebuildViewMatrix();
 }
 
 float Camera::getPitch()
 {
-	return angles.x;
+	return getLocalAngles().x;
 }
 
 void Camera::setPitch(float degrees)
 {
-	setLocalAngles(glm::vec3{ degrees, angles.y, angles.z });
+	setLocalAngles(glm::vec3{ degrees, getLocalAngles().y, getLocalAngles().z});
 }
 
 float Camera::getYaw()
 {
-	return angles.y;
+	return getLocalAngles().y;
 }
 
 void Camera::setYaw(float degrees)
 {
-	setLocalAngles(glm::vec3{angles.x, degrees, angles.z});
+	setLocalAngles(glm::vec3{getLocalAngles().x, degrees, getLocalAngles().z});
 }
 
 float Camera::getVerticalFov()
@@ -42,27 +44,28 @@ float Camera::getVerticalFov()
 void Camera::setVerticalFov(float degrees)
 {
 	vFov = degrees;
-	dirtyFlag |= kDirtyFlagView;
+	RebuildViewMatrix();
+	//dirtyFlag |= kDirtyFlagView;
 }
 
 Camera::Camera() : Camera(glm::vec3{0.0f}, glm::vec3{ 0.0f })
 {
 }
 
-Camera::Camera(const glm::vec3& pos, const glm::vec3& angles) : OldTransform(pos, glm::vec3{1.0f}, angles)
+Camera::Camera(const glm::vec3& pos, const glm::vec3& angles) : Transform(pos, glm::vec3{1.0f}, angles)
 {
 }
 
 void Camera::RebuildViewMatrix()
 {
-	dirtyFlag = dirtyFlag & (~(kDirtyFlagView));
-	viewMatrix = glm::lookAt(position, position - getForward(), getUp());
+	//dirtyFlag = dirtyFlag & (~(kDirtyFlagView));
+	viewMatrix = glm::lookAt(getLocalPosition(), getLocalPosition() - getForward(), getUp());
 }
 
 glm::mat4 Camera::GetViewMatrix()
 {
-	if ((dirtyFlag & kDirtyFlagView) != 0) {
-		RebuildViewMatrix();
-	}
+	//if ((dirtyFlag & kDirtyFlagView) != 0) {
+		//RebuildViewMatrix();
+	//}
 	return viewMatrix;
 }

@@ -11,7 +11,7 @@ Entity::Entity(const glm::vec3& pos, const glm::vec3& angles)
 }
 
 Entity::Entity(const glm::vec3& pos, const glm::vec3& vel, const glm::vec3& angles)
-	: OldTransform(pos, glm::vec3(1.0f), angles), velocity(vel)
+	: Transform(pos, glm::vec3(1.0f), angles), velocity(vel)
 {
 }
 
