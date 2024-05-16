@@ -12,6 +12,7 @@
 #include "gui/InfoOverlay.h"
 #include "misc/Printable.h"
 #include "entities/player/Player.h"
+#include "ecs/Component.h"
 
 const int kDefaultWindowWidth = 800;
 const int kDefaultWindowHeight = 600;

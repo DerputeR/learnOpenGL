@@ -141,6 +141,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\ecs\Component.cpp" />
     <ClCompile Include="dependencies\include\imgui\backends\imgui_impl_glfw.cpp" />
     <ClCompile Include="dependencies\include\imgui\backends\imgui_impl_opengl3.cpp" />
     <ClCompile Include="dependencies\include\imgui\imgui.cpp" />
@@ -168,6 +169,7 @@
     <ClCompile Include="src\scene\Transform.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\ecs\Component.h" />
     <ClInclude Include="dependencies\include\imgui\backends\imgui_impl_glfw.h" />
     <ClInclude Include="dependencies\include\imgui\backends\imgui_impl_opengl3.h" />
     <ClInclude Include="dependencies\include\imgui\backends\imgui_impl_opengl3_loader.h" />
