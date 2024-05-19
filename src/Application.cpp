@@ -12,7 +12,6 @@
 #include "gui/InfoOverlay.h"
 #include "misc/Printable.h"
 #include "entities/player/Player.h"
-#include "ecs/ECS.h"
 
 const int kDefaultWindowWidth = 800;
 const int kDefaultWindowHeight = 600;
@@ -235,8 +234,6 @@ void DrawTriangle(unsigned int vao, unsigned int triCount) {
 }
 
 int main() {
-	ECS::testPools();
-
 	std::cout << "Creating window..." << std::endl;
 
 	glfwInit();
@@ -393,7 +390,7 @@ int main() {
 	std::cout << std::endl;
 
 
-	// get into habit of drawing CCW
+	// getComponent into habit of drawing CCW
 	unsigned int indices[] = {
 		1, 0, 3,
 		3, 2, 1,
