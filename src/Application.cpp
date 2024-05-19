@@ -12,7 +12,7 @@
 #include "gui/InfoOverlay.h"
 #include "misc/Printable.h"
 #include "entities/player/Player.h"
-#include "ecs/Component.h"
+#include "ecs/ECS.h"
 
 const int kDefaultWindowWidth = 800;
 const int kDefaultWindowHeight = 600;
@@ -235,6 +235,8 @@ void DrawTriangle(unsigned int vao, unsigned int triCount) {
 }
 
 int main() {
+	ECS::testPools();
+
 	std::cout << "Creating window..." << std::endl;
 
 	glfwInit();
