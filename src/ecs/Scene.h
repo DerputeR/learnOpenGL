@@ -6,6 +6,6 @@
 class Scene
 {
 	std::vector<ECS::Entity> entities;
-	std::vector<ComponentPool*> componentPools;
+	std::vector<IComponentPool*> componentPools;
 };
 

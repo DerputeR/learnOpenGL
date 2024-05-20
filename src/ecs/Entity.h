@@ -4,13 +4,14 @@
 #include <deque>
 #include <iostream>
 #include <memory>
+#include "Component.h"
 
 namespace ECS
 {
-	using EntityID = unsigned int;
-	using ComponentMask = std::bitset<MAX_COMPONENTS>;
 	const int MAX_COMPONENTS = 32;
 	const int INIT_ENTITY_CAPCAITY = 128;
+	using EntityID = size_t;
+	using ComponentMask = std::bitset<MAX_COMPONENTS>;
 
 	struct Entity
 	{

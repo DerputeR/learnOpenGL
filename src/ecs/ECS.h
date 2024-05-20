@@ -86,7 +86,7 @@ namespace ECS
 				return nullptr;
 			}
 
-			T* pComponent = static_cast<T*>(componentPools[componentId]->getComponent(id));
+			T* pComponent = static_cast<T*>(componentPools[componentId]->getComponent(entityId));
 			return pComponent;
 		}
 
