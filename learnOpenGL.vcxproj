@@ -141,8 +141,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\ecs\Component.cpp" />
-    <ClCompile Include="src\ecs\ECS.cpp" />
     <ClCompile Include="dependencies\include\imgui\backends\imgui_impl_glfw.cpp" />
     <ClCompile Include="dependencies\include\imgui\backends\imgui_impl_opengl3.cpp" />
     <ClCompile Include="dependencies\include\imgui\imgui.cpp" />
@@ -151,8 +149,7 @@
     <ClCompile Include="dependencies\include\imgui\imgui_tables.cpp" />
     <ClCompile Include="dependencies\include\imgui\imgui_widgets.cpp" />
     <ClCompile Include="dependencies\include\imgui\misc\cpp\imgui_stdlib.cpp" />
-    <ClCompile Include="src\ecs\Entity.cpp" />
-    <ClCompile Include="src\ecs\Scene.cpp" />
+    <ClCompile Include="src\ecs\ECS.cpp" />
     <ClCompile Include="src\entities\Camera.cpp" />
     <ClCompile Include="src\entities\Entity.cpp" />
     <ClCompile Include="src\entities\OldTransform.cpp" />
@@ -172,8 +169,6 @@
     <ClCompile Include="src\scene\Transform.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\ecs\Component.h" />
-    <ClInclude Include="src\ecs\ECS.h" />
     <ClInclude Include="dependencies\include\imgui\backends\imgui_impl_glfw.h" />
     <ClInclude Include="dependencies\include\imgui\backends\imgui_impl_opengl3.h" />
     <ClInclude Include="dependencies\include\imgui\backends\imgui_impl_opengl3_loader.h" />
@@ -184,8 +179,7 @@
     <ClInclude Include="dependencies\include\imgui\imstb_textedit.h" />
     <ClInclude Include="dependencies\include\imgui\imstb_truetype.h" />
     <ClInclude Include="dependencies\include\imgui\misc\cpp\imgui_stdlib.h" />
-    <ClInclude Include="src\ecs\Entity.h" />
-    <ClInclude Include="src\ecs\Scene.h" />
+    <ClInclude Include="src\ecs\ECS.h" />
     <ClInclude Include="src\entities\Camera.h" />
     <ClInclude Include="src\entities\Entity.h" />
     <ClInclude Include="src\entities\OldTransform.h" />

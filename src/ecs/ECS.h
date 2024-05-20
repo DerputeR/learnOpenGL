@@ -1,98 +1,76 @@
 #pragma once
-#include <bitset>
 #include <vector>
-#include <iostream>
-#include <memory>
+#include <bitset>
+#include <deque>
 
 namespace ECS
 {
-	typedef unsigned long long EntityID;
-	const int MAX_COMPONENTS = 32;
-	const int INIT_ENTITY_CAPCAITY = 128;
-	typedef std::bitset<MAX_COMPONENTS> ComponentMask;
+	// shared consts
+	const size_t MAX_COMPONENTS = 32;
+	const size_t INITIAL_ENTITY_CAPACITY = 128;
+
+	using EntityId = size_t;
+	using ComponentMask = std::bitset<MAX_COMPONENTS>;
 
 	struct Entity
 	{
-		EntityID id;
+		EntityId id;
 		ComponentMask componentMask;
 	};
 
-	class ComponentPool
+	class EntityManager
 	{
-		std::vector<char> pool;
-		size_t componentSize;
+		size_t idCapacity;
+		std::deque<EntityId> freeIds;
 	public:
-		ComponentPool(size_t componentSize);
+		EntityManager();
+		/**
+		 * @brief Retrieves the next free EntityId.
+		 * If we run out of ids, we will add a new set of free ids 
+		 * before returning the first free id.
+		 * @return next free id 
+		 */
+		EntityId nextFreeId();
+		/**
+		 * @brief Mark the given id as free.
+		 * Be careful not to call this multiple times on the same id,
+		 * or the free list will be invalid!
+		 * @param id 
+		 */
+		void freeId(EntityId id);
+	};
 
-		template <class T>
-		ComponentPool create()
+	/**
+	 * @brief Interface common to ComponentPools.
+	 * This is so that when an entity is destroyed, we can simply
+	 * iterate through the vector of all component pools to locate
+	 * and remove the link between that entity and any components it had.
+	 */
+	class IComponentPool
+	{
+	public:
+		virtual ~IComponentPool() = default;
+		virtual void onEntityDestroyed() = 0;
+	};
+
+	template <class Component>
+	class ComponentPool : public IComponentPool
+	{
+		std::vector<Component> components;
+	public:
+		ComponentPool() : components(INITIAL_ENTITY_CAPACITY)
 		{
-			return ComponentPool{ sizeof(T) };
-		}
-		
-		void* getComponent(size_t index)
-		{
-			return &pool[index * componentSize];
 		}
 	};
 
-	static int componentCounter;
-	template <class T>
-	int getComponentId()
+	class Scene
 	{
-		static int componentId = componentCounter++;
-		return componentId;
-	}
-
-	class Scene {
 		std::vector<Entity> entities;
-		std::vector<ComponentPool*> componentPools;
+		std::vector<IComponentPool*> componentPools;
 
+		EntityManager entityManager;
 	public:
-		EntityID createEntity();
-
-		template <class T>
-		T* addComponent(EntityID entityId)
-		{
-			int componentId = getComponentId<T>();
-			if (componentPools.size() <= componentId)
-			{
-				// very unlikely this will happen, so only reallocate
-				// to bare minimum needed
-				std::cout << "Adding new component pool..." << std::endl;
-				componentPools.resize(componentId + 1, nullptr);
-			}
-			if (componentPools[componentId] == nullptr)
-			{
-				componentPools[componentId] = new ComponentPool{ ComponentPool{sizeof(T)} };
-			}
-
-
-			// Looks up the component in the pool, and initializes it with placement new
-			// TODO: this is dangerous if the entity count surpasses INIT_ENTITY_CAPACITY as right now we have no mechanism to force the pool itself to resize
-			T* pComponent = new (componentPools[componentId]->getComponent(entityId)) T;
-
-			// Set the bit for this component to true and return the created component
-			entities[entityId].componentMask.set(componentId);
-			return pComponent;
-		}
-
-		template <class T>
-		T* getComponent(EntityID entityId)
-		{
-			int componentId = getComponentId<T>();
-			if (!entities[componentId].componentMask.test(componentId))
-			{
-				return nullptr;
-			}
-
-			T* pComponent = static_cast<T*>(componentPools[componentId]->getComponent(entityId));
-			return pComponent;
-		}
-
+		Scene();
 		~Scene();
 	};
-
-	void testPools();
 }
-
