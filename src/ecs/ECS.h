@@ -2,6 +2,8 @@
 #include <vector>
 #include <bitset>
 #include <deque>
+#include <stdexcept>
+#include <string>
 
 namespace ECS
 {
@@ -59,15 +61,53 @@ namespace ECS
 		std::vector<Component> components;
 	public:
 		ComponentPool() : components(INITIAL_ENTITY_CAPACITY)
+		{ }
+	};
+
+	class ComponentManager
+	{
+		std::vector<IComponentPool*> componentPools;
+
+	public:
+		ComponentManager();
+		~ComponentManager();
+
+		template <class Component>
+		void assign(EntityId entityId)
 		{
+
+		}
+
+		int componentCounter = 0;
+
+		template <class Component>
+		int getComponentId()
+		{
+			static int componentId = componentCounter++;
+			return componentId;
+		}
+
+		template <class Component>
+		void registerComponent()
+		{
+			int id = getComponentId<Component>();
+			if (id >= MAX_COMPONENTS)
+			{
+				throw out_of_range("MAXIMUM COMPONENTS REACHED (" + std::to_string(MAX_COMPONENTS) + ")");
+			}
+			IComponentPool* pool = componentPools[id];
+			if (pool == nullptr)
+			{
+				componentPools[id] = new ComponentPool<Component>();
+			}
 		}
 	};
 
 	class Scene
 	{
 		std::vector<Entity> entities;
-		std::vector<IComponentPool*> componentPools;
 
+		ComponentManager componentManager;
 		EntityManager entityManager;
 	public:
 		Scene();
