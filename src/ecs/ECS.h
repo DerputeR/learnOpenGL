@@ -61,26 +61,24 @@ namespace ECS
     };
 
     template <class Component>
-    class ComponentPool : public IComponentPool
+    struct ComponentPool : public IComponentPool
     {
         std::vector<Component> components;
         std::vector<ComponentId> entityToComponent;
         std::vector<EntityId> componentToEntity;
-    public:
-        ComponentPool() : components(INITIAL_ENTITY_CAPACITY),
+    
+        ComponentPool() : components{},
             entityToComponent(INITIAL_ENTITY_CAPACITY, INVALID_COMPONENT_INDEX),
-            componentToEntity(INITIAL_ENTITY_CAPACITY, INVALID_COMPONENT_INDEX)
+            componentToEntity(INITIAL_ENTITY_CAPACITY, INVALID_ENTITY_ID)
         { }
 
         /**
-         * @brief Creates a new Component and links it with id
+         * @brief Creates a new Component and links it with id if one isn't already linked
          * @param id
          */
         void assign(EntityId id)
         {
-            ComponentId index = components.size();
-            components.push_back(Component{ });
-            size_t entityCapacity = components.size();
+            size_t entityCapacity = entityToComponent.size();
             if (id >= entityCapacity)
             {
                 size_t newSize = entityCapacity * 2;
@@ -91,6 +89,14 @@ namespace ECS
                 entityToComponent.resize(newSize, INVALID_COMPONENT_INDEX);
                 componentToEntity.resize(newSize, INVALID_ENTITY_ID);
             }
+            // check to make sure component isn't already assigned
+            ComponentId index = entityToComponent[id];
+            if (index != INVALID_COMPONENT_INDEX) return;
+
+            // add new component + update sparse sets
+            index = components.size();
+            components.push_back(Component{ });
+
             entityToComponent[id] = index;
             componentToEntity[index] = id;
         }
