@@ -41,29 +41,42 @@ namespace ECSUnitTests
 		}
 	};
 
-	TEST_CLASS(ECSUnitTests)
+	TEST_CLASS(ComponentPoolTests)
 	{
 	public:
-		TEST_METHOD(ComponentPoolTests)
+		TEST_METHOD(AssignEntityTest)
 		{
 			ECS::ComponentPool<Transform> transformPool;
 			transformPool.assign(0);
 			transformPool.assign(4);
 			transformPool.assign(3);
 			transformPool.assign(0);
-			std::vector<Transform> expected{
+			std::vector<Transform> components_expected{
 				Transform{},
 				Transform{},
 				Transform{} 
 			};
 
+			std::vector<ECS::ComponentIndex> etc_expected(ECS::INITIAL_ENTITY_CAPACITY, ECS::INVALID_COMPONENT_INDEX);
+			std::vector<ECS::EntityId> cte_expected(ECS::INITIAL_ENTITY_CAPACITY, ECS::INVALID_ENTITY_ID);
+
 			// compare dense array
-			Assert::IsTrue(expected.size() == transformPool.components.size());
+			Assert::IsTrue(components_expected.size() == transformPool.components.size());
 			
-			for (size_t i = 0; i < expected.size(); i++)
+			for (size_t i = 0; i < components_expected.size(); i++)
 			{
-				Assert::IsTrue(expected[i] == transformPool.components[i]);
+				Assert::IsTrue(components_expected[i] == transformPool.components[i]);
 			}
+
+			// compare entity to component sparse set
+
+
+			// compare component to entity sparse set
+
+
+			// now do some operations
+
+			// repeat the above comparisons
 		}
 	};
 }

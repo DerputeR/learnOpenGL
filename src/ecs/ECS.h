@@ -14,10 +14,11 @@ namespace ECS
 
     using EntityId = size_t;
     using ComponentId = size_t;
+    using ComponentIndex = size_t;
     using ComponentMask = std::bitset<MAX_COMPONENTS>;
 
     const EntityId INVALID_ENTITY_ID = -1;
-    const ComponentId INVALID_COMPONENT_INDEX = -1;
+    const ComponentIndex INVALID_COMPONENT_INDEX = -1;
 
     struct Entity
     {
@@ -64,7 +65,7 @@ namespace ECS
     struct ComponentPool : public IComponentPool
     {
         std::vector<Component> components;
-        std::vector<ComponentId> entityToComponent;
+        std::vector<ComponentIndex> entityToComponent;
         std::vector<EntityId> componentToEntity;
     
         ComponentPool() : components{},
@@ -90,7 +91,7 @@ namespace ECS
                 componentToEntity.resize(newSize, INVALID_ENTITY_ID);
             }
             // check to make sure component isn't already assigned
-            ComponentId index = entityToComponent[id];
+            ComponentIndex index = entityToComponent[id];
             if (index != INVALID_COMPONENT_INDEX) return;
 
             // add new component + update sparse sets
@@ -107,14 +108,14 @@ namespace ECS
          */
         void unassign(EntityId id)
         {
-            ComponentId index = entityToComponent[id];
+            ComponentIndex index = entityToComponent[id];
             if (index == INVALID_COMPONENT_INDEX) return;
 
             // we will copy the back to the component slot we want removed,
             // pop the back, then make sure the entity that had the back component
             // now points to the replaced slot, and that the replaced slot is
             // linked back to said entity
-            ComponentId backIndex = components.size() - 1;
+            ComponentIndex backIndex = components.size() - 1;
             EntityId backId = componentToEntity[backIndex];
 
             components[index] = components[backIndex];
