@@ -2,12 +2,12 @@
 
 namespace ECS
 {
-	Scene::Scene()
+	ComponentManager::ComponentManager()
 	{
 		
 	}
 
-	Scene::~Scene()
+	ComponentManager::~ComponentManager()
 	{
 		for (auto i : componentPools)
 		{
