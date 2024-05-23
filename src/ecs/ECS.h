@@ -20,6 +20,10 @@ namespace ECS
     const EntityId INVALID_ENTITY_ID = -1;
     const ComponentIndex INVALID_COMPONENT_INDEX = -1;
 
+    // todo: restructure so that Entity is simply the ID
+    // which is a combination of an id and a version
+    // so that someone doesn't accidentally change the componentmask
+    // and screw stuff up
     struct Entity
     {
         EntityId id;
@@ -30,8 +34,7 @@ namespace ECS
     {
         size_t idCapacity;
         std::deque<EntityId> freeIds;
-    public:
-        EntityManager();
+
         /**
          * @brief Retrieves the next free EntityId.
          * If we run out of ids, we will add a new set of free ids
@@ -46,6 +49,22 @@ namespace ECS
          * @param id
          */
         void freeId(EntityId id);
+    public:
+        EntityManager();
+
+        /**
+         * @brief Returns a new Entity with the next free EntityId
+         * @return new Entity
+         */
+        Entity next();
+
+        /**
+         * @brief Free the entity id
+         * @todo Implement entity versioning so hanging references to
+         * this id does not mistakenly access invalidated data
+         * @param entity 
+         */
+        void free(Entity entity);
     };
 
     /**

@@ -115,4 +115,25 @@ namespace ECSUnitTests
 			cte_expected[2] = ECS::INVALID_ENTITY_ID;
 		}
 	};
+
+	TEST_CLASS(ManagerTests)
+	{
+		ECS::ComponentManager componentManager;
+		ECS::EntityManager entityManager;
+
+		std::vector<ECS::Entity> entities;
+	public:
+
+		TEST_METHOD_INITIALIZE(TestInitializer)
+		{
+			entities = std::vector<ECS::Entity>{};
+			entityManager = ECS::EntityManager{};
+			componentManager = ECS::ComponentManager{};
+		}
+
+		TEST_METHOD(EntityAssignTest)
+		{
+			Assert::IsTrue(true);
+		}
+	};
 }

@@ -43,4 +43,16 @@ namespace ECS
     {
         freeIds.push_front(id);
     }
+
+    Entity EntityManager::next()
+    {
+        return Entity{ this->nextFreeId(), ComponentMask{} };
+    }
+
+    void EntityManager::free(Entity entity)
+    {
+        this->freeId(entity.id);
+        entity.id = ECS::INVALID_ENTITY_ID;
+        entity.componentMask = ComponentMask{};
+    }
 }

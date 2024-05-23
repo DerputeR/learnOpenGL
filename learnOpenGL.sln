@@ -6,6 +6,9 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "learnOpenGL", "learnOpenGL.vcxproj", "{8FB5A705-7692-42E9-83CF-23AFBF7B7795}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ECSUnitTests", "ECSUnitTests\ECSUnitTests.vcxproj", "{22549423-6693-411B-93B4-84F1C5045915}"
+	ProjectSection(ProjectDependencies) = postProject
+		{8FB5A705-7692-42E9-83CF-23AFBF7B7795} = {8FB5A705-7692-42E9-83CF-23AFBF7B7795}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
