@@ -52,13 +52,31 @@ namespace ECSUnitTests
 			transformPool.assign(3);
 			transformPool.assign(0);
 			std::vector<Transform> components_expected{
-				Transform{},
-				Transform{},
-				Transform{} 
+				Transform{{1, 0, 0}, {0, 100, 0}, {1, 1, 1}},
+				Transform{{0, 1, 0}, {90, 0, 0}, {1, 1, 1}},
+				Transform{{0, 0, 1}, {0, 10, 10}, {1, 1, 1}}
 			};
+			transformPool.components[0].position = {1, 0, 0};
+			transformPool.components[0].angles = { 0, 100, 0 };
+			transformPool.components[0].scale = { 1, 1, 1 };
+
+			transformPool.components[1].position = { 0, 1, 0 };
+			transformPool.components[1].angles = { 90, 0, 0 };
+			transformPool.components[1].scale = { 1, 1, 1 };
+
+			transformPool.components[2].position = { 0, 0, 1 };
+			transformPool.components[2].angles = { 0, 10, 10 };
+			transformPool.components[2].scale = { 1, 1, 1 };
+
 
 			std::vector<ECS::ComponentIndex> etc_expected(ECS::INITIAL_ENTITY_CAPACITY, ECS::INVALID_COMPONENT_INDEX);
+			etc_expected[0] = 0;
+			etc_expected[4] = 1;
+			etc_expected[3] = 2;
 			std::vector<ECS::EntityId> cte_expected(ECS::INITIAL_ENTITY_CAPACITY, ECS::INVALID_ENTITY_ID);
+			cte_expected[0] = 0;
+			cte_expected[1] = 4;
+			cte_expected[2] = 3;
 
 			// compare dense array
 			Assert::IsTrue(components_expected.size() == transformPool.components.size());
@@ -69,14 +87,32 @@ namespace ECSUnitTests
 			}
 
 			// compare entity to component sparse set
+			Assert::IsTrue(etc_expected.size() == transformPool.entityToComponent.size());
+
+			for (size_t i = 0; i < components_expected.size(); i++)
+			{
+				Assert::IsTrue(etc_expected[i] == transformPool.entityToComponent[i]);
+			}
 
 
 			// compare component to entity sparse set
+			Assert::IsTrue(cte_expected.size() == transformPool.componentToEntity.size());
 
+			for (size_t i = 0; i < components_expected.size(); i++)
+			{
+				Assert::IsTrue(cte_expected[i] == transformPool.componentToEntity[i]);
+			}
 
-			// now do some operations
-
-			// repeat the above comparisons
+			// now unassign an entity
+			components_expected[1] = components_expected[2];
+			components_expected.pop_back();
+			transformPool.unassign(4);
+			etc_expected[0] = 0;
+			etc_expected[4] = ECS::INVALID_COMPONENT_INDEX;
+			etc_expected[3] = 1;
+			cte_expected[0] = 0;
+			cte_expected[1] = 3;
+			cte_expected[2] = ECS::INVALID_ENTITY_ID;
 		}
 	};
 }
