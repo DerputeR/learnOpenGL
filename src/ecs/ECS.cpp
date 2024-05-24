@@ -59,6 +59,9 @@ namespace ECS
         if (entities[entity.id] == entity)
         {
             entities[entity.id] = INVALID_ENTITY;
+            entity.version++;
+            entity.componentMask.reset();
+            freeList.push_back(entity);
             entityCount--;
         }
     }
