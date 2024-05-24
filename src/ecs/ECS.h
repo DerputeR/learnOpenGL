@@ -12,7 +12,8 @@ namespace ECS
     const size_t MAX_COMPONENTS = 32;
     const size_t INITIAL_ENTITY_CAPACITY = 128;
 
-    using EntityId = size_t;
+    using EntityId = unsigned int;
+    using EntityVersion = unsigned int;
     using ComponentId = size_t;
     using ComponentIndex = size_t;
     using ComponentMask = std::bitset<MAX_COMPONENTS>;
@@ -20,51 +21,59 @@ namespace ECS
     const EntityId INVALID_ENTITY_ID = -1;
     const ComponentIndex INVALID_COMPONENT_INDEX = -1;
 
-    // todo: restructure so that Entity is simply the ID
-    // which is a combination of an id and a version
-    // so that someone doesn't accidentally change the componentmask
-    // and screw stuff up
     struct Entity
     {
         EntityId id;
+        EntityVersion version;
         ComponentMask componentMask;
+
+        /**
+         * @brief Returns true if the id and version match.
+         * The value of componentMask is ignored.
+         * @param other
+         * @return 
+         */
+        bool operator==(const Entity& other) const;
     };
+
+    const Entity INVALID_ENTITY{ INVALID_ENTITY_ID, 0, 0};
 
     class EntityManager
     {
-        size_t idCapacity;
-        std::deque<EntityId> freeIds;
+        unsigned int entityCapacity = INITIAL_ENTITY_CAPACITY;
+        unsigned int entityCount = 0;
+        std::vector<Entity> entities;
+        std::deque<Entity> freeList;
 
         /**
-         * @brief Retrieves the next free EntityId.
-         * If we run out of ids, we will add a new set of free ids
-         * before returning the first free id.
+         * @brief Retrieves the next free Entity from the free list.
+         * If we run out of free entities, we will create more
+         * before returning the first free entity, doubling
+         * the capacity of the free list. This will also double
+         * the capacity of the live entities list since we will use it
+         * as a map when destroying entities
          * @return next free id
          */
-        EntityId nextFreeId();
-        /**
-         * @brief Mark the given id as free.
-         * Be careful not to call this multiple times on the same id,
-         * or the free list will be invalid!
-         * @param id
-         */
-        void freeId(EntityId id);
+        Entity nextFree();
     public:
         EntityManager();
 
         /**
-         * @brief Returns a new Entity with the next free EntityId
-         * @return new Entity
+         * @brief Retrieves an unused entity, or creates a new one if a free
+         * entity is not available, and adds it to the live entities list
+         * before returning it.
+         * @return 
          */
-        Entity next();
+        Entity createEntity();
 
         /**
-         * @brief Free the entity id
-         * @todo Implement entity versioning so hanging references to
-         * this id does not mistakenly access invalidated data
+         * @brief If the given entity is in the live entities list, it will
+         * be removed, and this entity will be returned to the free list with
+         * its version incremented.
+         * This method does not deregister components.
          * @param entity 
          */
-        void free(Entity entity);
+        void destroyEntity(Entity entity);
     };
 
     /**
@@ -93,7 +102,8 @@ namespace ECS
         { }
 
         /**
-         * @brief Creates a new Component and links it with id if one isn't already linked
+         * @brief Creates a new Component and links it with id if one isn't already linked.
+         * This method does not update an entity's componentMask.
          * @param id
          */
         void assign(EntityId id)
@@ -122,7 +132,8 @@ namespace ECS
         }
 
         /**
-         * @brief Unlinks id from its Component, if it isn't already linked
+         * @brief Unlinks id from its Component, if it isn't already linked.
+         * This method does not update the entity's componentMask.
          * @param id
          */
         void unassign(EntityId id)
@@ -167,13 +178,14 @@ namespace ECS
          * @throws std::out_of_range if registerComponent fails
          */
         template <class Component>
-        void assign(EntityId entityId)
+        void assign(Entity& entity)
         {
             registerComponent<Component>();
             ComponentId compId = getComponentId<Component>();
+            entity.componentMask.set(compId);
             IComponentPool* pool = componentPools[compId];
             ComponentPool<Component>* cpool = static_cast<ComponentPool<Component>*>(pool);
-            cpool->assign(entityId);
+            cpool->assign(entity.id);
         }
 
         /**
@@ -182,13 +194,14 @@ namespace ECS
          * @param entityId
          */
         template <class Component>
-        void unassign(EntityId entityId)
+        void unassign(Entity& entity)
         {
             if (!isRegistered<Component>()) return;
             ComponentId compId = getComponentId<Component>();
+            entity.componentMask.reset(compId);
             IComponentPool* pool = componentPools[compId];
             ComponentPool<Component>* cpool = static_cast<ComponentPool<Component>*>(pool);
-            cpool->unassign(entityId);
+            cpool->unassign(entity.id);
         }
 
         /**

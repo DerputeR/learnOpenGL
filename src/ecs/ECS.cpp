@@ -15,44 +15,51 @@ namespace ECS
         }
     }
 
-    EntityManager::EntityManager() : freeIds(INITIAL_ENTITY_CAPACITY),
-        idCapacity{ INITIAL_ENTITY_CAPACITY }
+    bool Entity::operator==(const Entity& other) const
     {
-        for (size_t i = 0; i < freeIds.size(); i++)
+        return (id == other.id) && (version == other.version);
+    }
+
+    EntityManager::EntityManager() : freeList(INITIAL_ENTITY_CAPACITY),
+        entityCapacity{ INITIAL_ENTITY_CAPACITY },
+        entities(INITIAL_ENTITY_CAPACITY, INVALID_ENTITY)
+    {
+        for (EntityId i = 0; i < entityCapacity; i++)
         {
-            freeIds[i] = i;
+            freeList[i] = Entity{ i, 0 };
         }
     }
 
-    EntityId EntityManager::nextFreeId()
+    Entity EntityManager::createEntity()
     {
-        if (freeIds.size() == 0)
+        Entity ent = this->nextFree();
+        entities[ent.id] = ent;
+        entityCount++;
+        return ent;
+    }
+
+    Entity EntityManager::nextFree()
+    {
+        if (freeList.size() == 0)
         {
-            for (size_t i = idCapacity; i < idCapacity * 2; i++)
+            for (EntityId i = entityCapacity; i < entityCapacity * 2; i++)
             {
-                freeIds.push_back(i);
+                freeList.push_back(Entity {i, 0});
             }
-            idCapacity *= 2;
+            entityCapacity *= 2;
+            entities.resize(entityCapacity, INVALID_ENTITY);
         }
-        EntityId id = freeIds.front();
-        freeIds.pop_front();
-        return id;
+        Entity ent = freeList.front();
+        freeList.pop_front();
+        return ent;
     }
 
-    void EntityManager::freeId(EntityId id)
+    void EntityManager::destroyEntity(Entity entity)
     {
-        freeIds.push_front(id);
-    }
-
-    Entity EntityManager::next()
-    {
-        return Entity{ this->nextFreeId(), ComponentMask{} };
-    }
-
-    void EntityManager::free(Entity entity)
-    {
-        this->freeId(entity.id);
-        entity.id = ECS::INVALID_ENTITY_ID;
-        entity.componentMask = ComponentMask{};
+        if (entities[entity.id] == entity)
+        {
+            entities[entity.id] = INVALID_ENTITY;
+            entityCount--;
+        }
     }
 }
