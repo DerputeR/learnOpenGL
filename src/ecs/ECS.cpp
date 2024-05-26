@@ -2,12 +2,7 @@
 
 namespace ECS
 {
-    ComponentManager::ComponentManager()
-    {
-
-    }
-
-    ComponentManager::~ComponentManager()
+    Scene::~Scene()
     {
         for (auto i : componentPools)
         {
@@ -20,9 +15,9 @@ namespace ECS
         return (id == other.id) && (version == other.version);
     }
 
-    EntityManager::EntityManager() : freeList(INITIAL_ENTITY_CAPACITY),
+    Scene::Scene() : freeList(INITIAL_ENTITY_CAPACITY),
         entityCapacity{ INITIAL_ENTITY_CAPACITY },
-        entities(INITIAL_ENTITY_CAPACITY, INVALID_ENTITY)
+        entityInfoList(INITIAL_ENTITY_CAPACITY, INVALID_ENTITY_INFO)
     {
         for (EntityId i = 0; i < entityCapacity; i++)
         {
@@ -30,15 +25,15 @@ namespace ECS
         }
     }
 
-    Entity EntityManager::createEntity()
+    Entity Scene::createEntity()
     {
         Entity ent = this->nextFree();
-        entities[ent.id] = ent;
+        entityInfoList[ent.id] = EntityInfo{ ent.version, ComponentMask{} };
         entityCount++;
         return ent;
     }
 
-    Entity EntityManager::nextFree()
+    Entity Scene::nextFree()
     {
         if (freeList.size() == 0)
         {
@@ -47,20 +42,21 @@ namespace ECS
                 freeList.push_back(Entity {i, 0});
             }
             entityCapacity *= 2;
-            entities.resize(entityCapacity, INVALID_ENTITY);
+            entityInfoList.resize(entityCapacity, INVALID_ENTITY_INFO);
         }
         Entity ent = freeList.front();
         freeList.pop_front();
         return ent;
     }
 
-    void EntityManager::destroyEntity(Entity entity)
+    void Scene::destroyEntity(Entity entity)
     {
-        if (entities[entity.id] == entity)
+        if (entity != INVALID_ENTITY
+            && entity.id < entityInfoList.size()
+            && entityInfoList[entity.id].version == entity.version)
         {
-            entities[entity.id] = INVALID_ENTITY;
+            entityInfoList[entity.id] = INVALID_ENTITY_INFO;
             entity.version++;
-            entity.componentMask.reset();
             freeList.push_back(entity);
             entityCount--;
         }

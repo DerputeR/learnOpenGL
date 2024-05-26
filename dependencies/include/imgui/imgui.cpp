@@ -8965,7 +8965,7 @@ static int CalcRoutingScore(ImGuiWindow* location, ImGuiID owner_id, ImGuiInputF
 // - Routes and key ownership are attributed at the beginning of next frame based on best score and mod state.
 //   (Conceptually this does a "Submit for next frame" + "Test for current frame".
 //   As such, it could be called TrySetXXX or SubmitXXX, or the Submit and Test operations should be separate.)
-// - Using 'owner_id == ImGuiKeyOwner_Any/0': auto-assign an owner based on current focus scope (each window has its focus scope by default)
+// - Using 'owner_id == ImGuiKeyOwner_Any/0': auto-addComponent an owner based on current focus scope (each window has its focus scope by default)
 // - Using 'owner_id == ImGuiKeyOwner_None': allows disabling/locking a shortcut.
 bool ImGui::SetShortcutRouting(ImGuiKeyChord key_chord, ImGuiID owner_id, ImGuiInputFlags flags)
 {
@@ -16367,7 +16367,7 @@ static void ImGui::DockNodeApplyPosSizeToWindows(ImGuiDockNode* node)
 {
     for (ImGuiWindow* window : node->Windows)
     {
-        SetWindowPos(window, node->Pos, ImGuiCond_Always); // We don't assign directly to Pos because it can break the calculation of SizeContents on next frame
+        SetWindowPos(window, node->Pos, ImGuiCond_Always); // We don't addComponent directly to Pos because it can break the calculation of SizeContents on next frame
         SetWindowSize(window, node->Size, ImGuiCond_Always);
     }
 }
@@ -18182,7 +18182,7 @@ ImGuiID ImGui::DockSpace(ImGuiID id, const ImVec2& size_arg, ImGuiDockNodeFlags 
     // We need to handle the rare case were a central node is missing.
     // This can happen if the node was first created manually with DockBuilderAddNode() but _without_ the ImGuiDockNodeFlags_Dockspace.
     // Doing it correctly would set the _CentralNode flags, which would then propagate according to subsequent split.
-    // It would also be ambiguous to attempt to assign a central node while there are split nodes, so we wait until there's a single node remaining.
+    // It would also be ambiguous to attempt to addComponent a central node while there are split nodes, so we wait until there's a single node remaining.
     // The specific sub-property of _CentralNode we are interested in recovering here is the "Don't delete when empty" property,
     // as it doesn't make sense for an empty dockspace to not have this property.
     if (node->IsLeafNode() && !node->IsCentralNode())

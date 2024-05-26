@@ -87,23 +87,23 @@ namespace ECSUnitTests
 			}
 
 			// compare entity to component sparse set
-			Assert::IsTrue(etc_expected.size() == transformPool.entityToComponent.size());
+			Assert::IsTrue(etc_expected.size() == transformPool.entityIdToComponentIndex.size());
 
 			for (size_t i = 0; i < components_expected.size(); i++)
 			{
-				Assert::IsTrue(etc_expected[i] == transformPool.entityToComponent[i]);
+				Assert::IsTrue(etc_expected[i] == transformPool.entityIdToComponentIndex[i]);
 			}
 
 
 			// compare component to entity sparse set
-			Assert::IsTrue(cte_expected.size() == transformPool.componentToEntity.size());
+			Assert::IsTrue(cte_expected.size() == transformPool.componentIndexToEntityId.size());
 
 			for (size_t i = 0; i < components_expected.size(); i++)
 			{
-				Assert::IsTrue(cte_expected[i] == transformPool.componentToEntity[i]);
+				Assert::IsTrue(cte_expected[i] == transformPool.componentIndexToEntityId[i]);
 			}
 
-			// now unassign an entity
+			// now removeComponent an entity
 			components_expected[1] = components_expected[2];
 			components_expected.pop_back();
 			transformPool.unassign(4);
@@ -116,23 +116,17 @@ namespace ECSUnitTests
 		}
 	};
 
-	TEST_CLASS(ManagerTests)
-	{
-		ECS::ComponentManager componentManager;
-		ECS::EntityManager entityManager;
-
-		std::vector<ECS::Entity> entities;
+	TEST_CLASS(SceneTests)
+	{		
 	public:
-
-		TEST_METHOD_INITIALIZE(TestInitializer)
-		{
-			entities = std::vector<ECS::Entity>{};
-			entityManager = ECS::EntityManager{};
-			componentManager = ECS::ComponentManager{};
-		}
 
 		TEST_METHOD(EntityAssignTest)
 		{
+			ECS::Scene scene;
+			ECS::Entity player = scene.createEntity();
+			ECS::Entity camera = scene.createEntity();
+			ECS::Entity physObj = scene.createEntity();
+
 			Assert::IsTrue(true);
 		}
 	};

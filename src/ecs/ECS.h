@@ -25,56 +25,23 @@ namespace ECS
     {
         EntityId id;
         EntityVersion version;
-        ComponentMask componentMask;
 
         /**
          * @brief Returns true if the id and version match.
-         * The value of componentMask is ignored.
          * @param other
          * @return 
          */
         bool operator==(const Entity& other) const;
     };
 
-    const Entity INVALID_ENTITY{ INVALID_ENTITY_ID, 0, 0};
-
-    class EntityManager
+    struct EntityInfo
     {
-        unsigned int entityCapacity = INITIAL_ENTITY_CAPACITY;
-        unsigned int entityCount = 0;
-        std::vector<Entity> entities;
-        std::deque<Entity> freeList;
-
-        /**
-         * @brief Retrieves the next free Entity from the free list.
-         * If we run out of free entities, we will create more
-         * before returning the first free entity, doubling
-         * the capacity of the free list. This will also double
-         * the capacity of the live entities list since we will use it
-         * as a map when destroying entities
-         * @return next free id
-         */
-        Entity nextFree();
-    public:
-        EntityManager();
-
-        /**
-         * @brief Retrieves an unused entity, or creates a new one if a free
-         * entity is not available, and adds it to the live entities list
-         * before returning it.
-         * @return 
-         */
-        Entity createEntity();
-
-        /**
-         * @brief If the given entity is in the live entities list, it will
-         * be removed, and this entity will be returned to the free list with
-         * its version incremented.
-         * This method does not deregister components.
-         * @param entity 
-         */
-        void destroyEntity(Entity entity);
+        EntityVersion version;
+        ComponentMask componentMask;
     };
+
+    const Entity INVALID_ENTITY{ INVALID_ENTITY_ID, 0};
+    const EntityInfo INVALID_ENTITY_INFO{ 0, ComponentMask{} };
 
     /**
      * @brief Interface common to ComponentPools.
@@ -93,12 +60,12 @@ namespace ECS
     struct ComponentPool : public IComponentPool
     {
         std::vector<Component> components;
-        std::vector<ComponentIndex> entityToComponent;
-        std::vector<EntityId> componentToEntity;
+        std::vector<ComponentIndex> entityIdToComponentIndex;
+        std::vector<EntityId> componentIndexToEntityId;
     
         ComponentPool() : components{},
-            entityToComponent(INITIAL_ENTITY_CAPACITY, INVALID_COMPONENT_INDEX),
-            componentToEntity(INITIAL_ENTITY_CAPACITY, INVALID_ENTITY_ID)
+            entityIdToComponentIndex(INITIAL_ENTITY_CAPACITY, INVALID_COMPONENT_INDEX),
+            componentIndexToEntityId(INITIAL_ENTITY_CAPACITY, INVALID_ENTITY_ID)
         { }
 
         /**
@@ -108,7 +75,7 @@ namespace ECS
          */
         void assign(EntityId id)
         {
-            size_t entityCapacity = entityToComponent.size();
+            size_t entityCapacity = entityIdToComponentIndex.size();
             if (id >= entityCapacity)
             {
                 size_t newSize = entityCapacity * 2;
@@ -116,19 +83,19 @@ namespace ECS
                 {
                     newSize *= 2;
                 }
-                entityToComponent.resize(newSize, INVALID_COMPONENT_INDEX);
-                componentToEntity.resize(newSize, INVALID_ENTITY_ID);
+                entityIdToComponentIndex.resize(newSize, INVALID_COMPONENT_INDEX);
+                componentIndexToEntityId.resize(newSize, INVALID_ENTITY_ID);
             }
             // check to make sure component isn't already assigned
-            ComponentIndex index = entityToComponent[id];
+            ComponentIndex index = entityIdToComponentIndex[id];
             if (index != INVALID_COMPONENT_INDEX) return;
 
             // add new component + update sparse sets
             index = components.size();
             components.push_back(Component{ });
 
-            entityToComponent[id] = index;
-            componentToEntity[index] = id;
+            entityIdToComponentIndex[id] = index;
+            componentIndexToEntityId[index] = id;
         }
 
         /**
@@ -138,7 +105,7 @@ namespace ECS
          */
         void unassign(EntityId id)
         {
-            ComponentIndex index = entityToComponent[id];
+            ComponentIndex index = entityIdToComponentIndex[id];
             if (index == INVALID_COMPONENT_INDEX) return;
 
             // we will copy the back to the component slot we want removed,
@@ -146,14 +113,14 @@ namespace ECS
             // now points to the replaced slot, and that the replaced slot is
             // linked back to said entity
             ComponentIndex backIndex = components.size() - 1;
-            EntityId backId = componentToEntity[backIndex];
+            EntityId backId = componentIndexToEntityId[backIndex];
 
             components[index] = components[backIndex];
             components.pop_back();
 
-            entityToComponent[id] = INVALID_COMPONENT_INDEX;
-            componentToEntity[backIndex] = INVALID_ENTITY_ID;
-            componentToEntity[index] = backId;
+            entityIdToComponentIndex[id] = INVALID_COMPONENT_INDEX;
+            componentIndexToEntityId[backIndex] = INVALID_ENTITY_ID;
+            componentIndexToEntityId[index] = backId;
         }
 
         void onEntityDestroyed(EntityId id) override
@@ -162,47 +129,48 @@ namespace ECS
         }
     };
 
-    class ComponentManager
+    class Scene
     {
+        // Component registration
         int componentCounter = 0;
         std::vector<IComponentPool*> componentPools;
+
+        // Entity data
+        unsigned int entityCapacity = INITIAL_ENTITY_CAPACITY;
+        unsigned int entityCount = 0;
+        std::vector<EntityInfo> entityInfoList;
+        std::deque<Entity> freeList;
+
+        /**
+         * @brief Retrieves the next free Entity from the free list.
+         * If we run out of free entities, we will create more
+         * before returning the first free entity, doubling
+         * the capacity of the free list. This will also double
+         * the capacity of the live entities list since we will use it
+         * as a map when destroying entities
+         * @return next free id
+         */
+        Entity nextFree();
     public:
-        ComponentManager();
-        ~ComponentManager();
+        Scene();
+        ~Scene();
 
         /**
-         * @brief Calls registerComponent<Component> to ensure the component is registered,
-         * then assigns a component to the given entity.
-         * @tparam Component
-         * @param entityId
-         * @throws std::out_of_range if registerComponent fails
+         * @brief Retrieves an unused entity, or creates a new one if a free
+         * entity is not available, and adds it to the live entities list
+         * before returning it.
+         * @return
          */
-        template <class Component>
-        void assign(Entity& entity)
-        {
-            registerComponent<Component>();
-            ComponentId compId = getComponentId<Component>();
-            entity.componentMask.set(compId);
-            IComponentPool* pool = componentPools[compId];
-            ComponentPool<Component>* cpool = static_cast<ComponentPool<Component>*>(pool);
-            cpool->assign(entity.id);
-        }
+        Entity createEntity();
 
         /**
-         * @brief Unassigns Component from the given entityId
-         * @tparam Component
-         * @param entityId
+         * @brief If the given entity is in the live entities list, it will
+         * be removed, and this entity will be returned to the free list with
+         * its version incremented.
+         * This method does not deregister components.
+         * @param entity
          */
-        template <class Component>
-        void unassign(Entity& entity)
-        {
-            if (!isRegistered<Component>()) return;
-            ComponentId compId = getComponentId<Component>();
-            entity.componentMask.reset(compId);
-            IComponentPool* pool = componentPools[compId];
-            ComponentPool<Component>* cpool = static_cast<ComponentPool<Component>*>(pool);
-            cpool->unassign(entity.id);
-        }
+        void destroyEntity(Entity entity);
 
         /**
          * @brief Checks if the given Component type has been registered to the manager
@@ -211,7 +179,7 @@ namespace ECS
          *		   or if it cannot be registered (component id >= MAX_COMPONENTS)
          */
         template <class Component>
-        bool isRegistered(ComponentId id)
+        bool isComponentRegistered(ComponentId id)
         {
             ComponentId id = getComponentId<Component>();
             if (id >= MAX_COMPONENTS) return false;
@@ -241,7 +209,7 @@ namespace ECS
         template <class Component>
         void registerComponent()
         {
-            if (isRegistered<Component>()) return;
+            if (isComponentRegistered<Component>()) return;
             ComponentId id = getComponentId<Component>();
             if (id >= MAX_COMPONENTS)
             {
@@ -249,15 +217,65 @@ namespace ECS
             }
             IComponentPool* pool = new ComponentPool<Component>();
         }
-    };
 
-    class Scene
-    {
-        std::vector<Entity> entities;
+        /**
+         * @brief Calls registerComponent<Component> to ensure the component is registered,
+         * then assigns a component to the given entity.
+         * @tparam Component
+         * @param entityId
+         * @throws std::out_of_range if registerComponent fails
+         */
+        template <class Component>
+        void addComponent(Entity entity)
+        {
+            // make sure this entity is alive
+            if (entity.id >= 0 &&
+                entity.id < entityInfoList.size() &&
+                entity.version == entityInfoList[entity.id].version)
+            {
+                registerComponent<Component>();
+                ComponentId compId = getComponentId<Component>();
+                entityInfoList[entity.id].componentMask.set(compId);
+                IComponentPool* pool = componentPools[compId];
+                ComponentPool<Component>* cpool = static_cast<ComponentPool<Component>*>(pool);
+                cpool->assign(entity.id);
+            }
+        }
 
-        ComponentManager componentManager;
-        EntityManager entityManager;
-    public:
+        /**
+         * @brief Retrives a pointer to the Component attached to the given entity, if one exists
+         * @tparam Component 
+         * @param entity 
+         * @return 
+         */
+        template <class Component>
+        Component* getComponent(Entity entity)
+        {
+            if (!isComponentRegistered<Component>()) return nullptr;
+            ComponentId compId = getComponentId<Component>();
+            if (entityInfoList[entity.id].componentMask.test(compId))
+            {
+                IComponentPool* pool = componentPools[compId];
+                ComponentPool<Component>* cpool = static_cast<ComponentPool<Component>*>(pool);
+                return &(cpool->components[cpool->entityIdToComponentIndex[entity.id]]);
+            }
+            return nullptr;
+        }
 
+        /**
+         * @brief Unassigns Component from the given entityId
+         * @tparam Component
+         * @param entityId
+         */
+        template <class Component>
+        void removeComponent(Entity entity)
+        {
+            if (!isComponentRegistered<Component>()) return;
+            ComponentId compId = getComponentId<Component>();
+            entityInfoList[entity.id].componentMask.reset(compId);
+            IComponentPool* pool = componentPools[compId];
+            ComponentPool<Component>* cpool = static_cast<ComponentPool<Component>*>(pool);
+            cpool->unassign(entity.id);
+        }
     };
 }
