@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <array>
 #include <bitset>
 #include <deque>
 #include <stdexcept>
@@ -19,6 +20,7 @@ namespace ECS
     using ComponentMask = std::bitset<MAX_COMPONENTS>;
 
     const EntityId INVALID_ENTITY_ID = -1;
+    const EntityVersion INVALID_ENTITY_VERSION = -1;
     const ComponentIndex INVALID_COMPONENT_INDEX = -1;
 
     struct Entity
@@ -38,10 +40,17 @@ namespace ECS
     {
         EntityVersion version;
         ComponentMask componentMask;
+
+        /**
+         * @brief Returns true if the version and bitmask match.
+         * @param other
+         * @return
+         */
+        bool operator==(const EntityInfo& other) const;
     };
 
-    const Entity INVALID_ENTITY{ INVALID_ENTITY_ID, 0};
-    const EntityInfo INVALID_ENTITY_INFO{ 0, ComponentMask{} };
+    const Entity INVALID_ENTITY{ INVALID_ENTITY_ID, INVALID_ENTITY_VERSION };
+    const EntityInfo INVALID_ENTITY_INFO{ INVALID_ENTITY_VERSION, ComponentMask{} };
 
     /**
      * @brief Interface common to ComponentPools.
@@ -151,26 +160,13 @@ namespace ECS
          * @return next free id
          */
         Entity nextFree();
-    public:
-        Scene();
-        ~Scene();
 
         /**
-         * @brief Retrieves an unused entity, or creates a new one if a free
-         * entity is not available, and adds it to the live entities list
-         * before returning it.
-         * @return
-         */
-        Entity createEntity();
-
-        /**
-         * @brief If the given entity is in the live entities list, it will
-         * be removed, and this entity will be returned to the free list with
-         * its version incremented.
-         * This method does not deregister components.
+         * @brief Tests if this entity is alive
          * @param entity
+         * @return true if alive, false if not
          */
-        void destroyEntity(Entity entity);
+        bool isAlive(Entity entity);
 
         /**
          * @brief Checks if the given Component type has been registered to the manager
@@ -179,10 +175,10 @@ namespace ECS
          *		   or if it cannot be registered (component id >= MAX_COMPONENTS)
          */
         template <class Component>
-        bool isComponentRegistered(ComponentId id)
+        bool isComponentRegistered()
         {
             ComponentId id = getComponentId<Component>();
-            if (id >= MAX_COMPONENTS) return false;
+            if (id >= componentPools.size()) return false;
             IComponentPool* pool = componentPools[id];
             if (pool == nullptr) return false;
             return true;
@@ -216,7 +212,43 @@ namespace ECS
                 throw std::out_of_range("MAXIMUM COMPONENTS REACHED (" + std::to_string(MAX_COMPONENTS) + ")");
             }
             IComponentPool* pool = new ComponentPool<Component>();
+            if (id = componentPools.size())
+            {
+                componentPools.push_back(pool);
+            }
+            else
+            {
+                componentPools.resize(id + 1, nullptr);
+                componentPools[id] = pool;
+            }
         }
+
+    public:
+        Scene();
+        ~Scene();
+
+        /**
+         * @brief Retrieves an unused entity, or creates a new one if a free
+         * entity is not available, and adds it to the live entities list
+         * before returning it.
+         * @return
+         */
+        Entity createEntity();
+
+        /**
+         * @brief Returns a vector of all current living entities. This list is NOT a live list, and modifying it has no bearing on the entities in this scene.
+         * @return Live entities vector
+         */
+        std::vector<Entity> getEntities();
+
+        /**
+         * @brief If the given entity is in the live entities list, it will
+         * be removed, and this entity will be returned to the free list with
+         * its version incremented.
+         * This method does not deregister components.
+         * @param entity
+         */
+        void destroyEntity(Entity entity);
 
         /**
          * @brief Calls registerComponent<Component> to ensure the component is registered,
@@ -229,9 +261,7 @@ namespace ECS
         void addComponent(Entity entity)
         {
             // make sure this entity is alive
-            if (entity.id >= 0 &&
-                entity.id < entityInfoList.size() &&
-                entity.version == entityInfoList[entity.id].version)
+            if (isAlive(entity))
             {
                 registerComponent<Component>();
                 ComponentId compId = getComponentId<Component>();
@@ -245,13 +275,14 @@ namespace ECS
         /**
          * @brief Retrives a pointer to the Component attached to the given entity, if one exists
          * @tparam Component 
-         * @param entity 
-         * @return 
+         * @param entity Must be a living entity
+         * @return nullptr if entity is not alive or if component is not added
          */
         template <class Component>
         Component* getComponent(Entity entity)
         {
             if (!isComponentRegistered<Component>()) return nullptr;
+            if (!isAlive(entity)) return nullptr;
             ComponentId compId = getComponentId<Component>();
             if (entityInfoList[entity.id].componentMask.test(compId))
             {
@@ -271,6 +302,7 @@ namespace ECS
         void removeComponent(Entity entity)
         {
             if (!isComponentRegistered<Component>()) return;
+            if (!isAlive(entity)) return;
             ComponentId compId = getComponentId<Component>();
             entityInfoList[entity.id].componentMask.reset(compId);
             IComponentPool* pool = componentPools[compId];

@@ -15,6 +15,11 @@ namespace ECS
         return (id == other.id) && (version == other.version);
     }
 
+    bool EntityInfo::operator==(const EntityInfo& other) const
+    {
+        return (version == other.version) && (componentMask == other.componentMask);
+    }
+
     Scene::Scene() : freeList(INITIAL_ENTITY_CAPACITY),
         entityCapacity{ INITIAL_ENTITY_CAPACITY },
         entityInfoList(INITIAL_ENTITY_CAPACITY, INVALID_ENTITY_INFO)
@@ -33,6 +38,19 @@ namespace ECS
         return ent;
     }
 
+    std::vector<Entity> Scene::getEntities()
+    {
+        std::vector<Entity> liveEntities{};
+        for (EntityId i = 0; i < entityInfoList.size(); i++)
+        {
+            if (entityInfoList[i].version != INVALID_ENTITY_VERSION)
+            {
+                liveEntities.push_back(Entity{ i, entityInfoList[i].version });
+            }
+        }
+        return liveEntities;
+    }
+
     Entity Scene::nextFree()
     {
         if (freeList.size() == 0)
@@ -49,11 +67,16 @@ namespace ECS
         return ent;
     }
 
+    bool Scene::isAlive(Entity entity)
+    {
+        return (entity.id != INVALID_ENTITY_ID
+            && entity.id < entityInfoList.size()
+            && entity.version == entityInfoList[entity.id].version);
+    }
+
     void Scene::destroyEntity(Entity entity)
     {
-        if (entity != INVALID_ENTITY
-            && entity.id < entityInfoList.size()
-            && entityInfoList[entity.id].version == entity.version)
+        if (isAlive(entity))
         {
             entityInfoList[entity.id] = INVALID_ENTITY_INFO;
             entity.version++;

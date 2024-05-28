@@ -113,21 +113,60 @@ namespace ECSUnitTests
 			cte_expected[0] = 0;
 			cte_expected[1] = 3;
 			cte_expected[2] = ECS::INVALID_ENTITY_ID;
+
+			Assert::IsTrue(etc_expected.size() == transformPool.entityIdToComponentIndex.size());
+			for (size_t i = 0; i < components_expected.size(); i++)
+			{
+				Assert::IsTrue(etc_expected[i] == transformPool.entityIdToComponentIndex[i]);
+			}
+
+			Assert::IsTrue(cte_expected.size() == transformPool.componentIndexToEntityId.size());
+			for (size_t i = 0; i < components_expected.size(); i++)
+			{
+				Assert::IsTrue(cte_expected[i] == transformPool.componentIndexToEntityId[i]);
+			}
 		}
 	};
 
 	TEST_CLASS(SceneTests)
 	{		
+		ECS::Scene scene;
+		ECS::Entity player;
+		ECS::Entity camera;
+		ECS::Entity physObj;
+
 	public:
-
-		TEST_METHOD(EntityAssignTest)
+		TEST_METHOD_INITIALIZE(ECSInit)
 		{
-			ECS::Scene scene;
-			ECS::Entity player = scene.createEntity();
-			ECS::Entity camera = scene.createEntity();
-			ECS::Entity physObj = scene.createEntity();
+			scene = ECS::Scene{};
+			player = scene.createEntity();
+			camera = scene.createEntity();
+			physObj = scene.createEntity();
 
-			Assert::IsTrue(true);
+			auto e = scene.getEntities();
+			Assert::IsTrue(player == e[0]);
+			Assert::IsTrue(camera == e[1]);
+			Assert::IsTrue(physObj == e[2]);
+		}
+
+		TEST_METHOD(SingleComponentTest)
+		{
+			Transform* t = scene.getComponent<Transform>(player);
+			Assert::IsTrue(t == nullptr);
+
+			scene.addComponent<Transform>(player);
+			t = scene.getComponent<Transform>(player);
+			Assert::IsTrue(t != nullptr);
+
+			t->position.x = 5;
+			Assert::IsTrue(scene.getComponent<Transform>(player)->position.x == 5);
+
+			scene.addComponent<Transform>(player);
+			Assert::IsTrue(scene.getComponent<Transform>(player)->position.x == 5);
+
+			scene.removeComponent<Transform>(player);
+			t = scene.getComponent<Transform>(player);
+			Assert::IsTrue(t == nullptr);
 		}
 	};
 }
