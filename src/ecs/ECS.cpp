@@ -2,6 +2,8 @@
 
 namespace ECS
 {
+    int componentCounter = 0;
+
     Scene::~Scene()
     {
         for (auto i : componentPools)
@@ -24,7 +26,7 @@ namespace ECS
         entityCapacity{ INITIAL_ENTITY_CAPACITY },
         entityInfoList(INITIAL_ENTITY_CAPACITY, INVALID_ENTITY_INFO)
     {
-        for (EntityId i = 0; i < entityCapacity; i++)
+        for (entity_id i = 0; i < entityCapacity; i++)
         {
             freeList[i] = Entity{ i, 0 };
         }
@@ -41,7 +43,7 @@ namespace ECS
     std::vector<Entity> Scene::getEntities()
     {
         std::vector<Entity> liveEntities{};
-        for (EntityId i = 0; i < entityInfoList.size(); i++)
+        for (entity_id i = 0; i < entityInfoList.size(); i++)
         {
             if (entityInfoList[i].version != INVALID_ENTITY_VERSION)
             {
@@ -55,7 +57,7 @@ namespace ECS
     {
         if (freeList.size() == 0)
         {
-            for (EntityId i = entityCapacity; i < entityCapacity * 2; i++)
+            for (entity_id i = entityCapacity; i < entityCapacity * 2; i++)
             {
                 freeList.push_back(Entity {i, 0});
             }

@@ -1,11 +1,11 @@
 #pragma once
 #include <vector>
+#include <array>
 #include <bitset>
 #include <deque>
 #include <stdexcept>
 #include <string>
-#include <iterator>
-#include <cstddef>
+#include "../misc/Iterators.h"
 
 namespace ECS
 {
@@ -13,20 +13,20 @@ namespace ECS
     const size_t MAX_COMPONENTS = 32;
     const size_t INITIAL_ENTITY_CAPACITY = 128;
 
-    using EntityId = unsigned int;
-    using EntityVersion = unsigned int;
-    using ComponentId = size_t;
-    using ComponentIndex = size_t;
+    using entity_id = unsigned int;
+    using entity_version = unsigned int;
+    using component_id = size_t;
+    using component_index = size_t;
     using ComponentMask = std::bitset<MAX_COMPONENTS>;
 
-    const EntityId INVALID_ENTITY_ID = -1;
-    const EntityVersion INVALID_ENTITY_VERSION = -1;
-    const ComponentIndex INVALID_COMPONENT_INDEX = -1;
+    const entity_id INVALID_ENTITY_ID = -1;
+    const entity_version INVALID_ENTITY_VERSION = -1;
+    const component_index INVALID_COMPONENT_INDEX = -1;
 
     struct Entity
     {
-        EntityId id;
-        EntityVersion version;
+        entity_id id;
+        entity_version version;
 
         /**
          * @brief Returns true if the id and version match.
@@ -38,7 +38,7 @@ namespace ECS
 
     struct EntityInfo
     {
-        EntityVersion version;
+        entity_version version;
         ComponentMask componentMask;
 
         /**
@@ -52,6 +52,21 @@ namespace ECS
     const Entity INVALID_ENTITY{ INVALID_ENTITY_ID, INVALID_ENTITY_VERSION };
     const EntityInfo INVALID_ENTITY_INFO{ INVALID_ENTITY_VERSION, ComponentMask{} };
 
+    extern int componentCounter; // defined in ECS.cpp
+
+    /**
+     * @brief Initializes the component id for a given Component. The id starts from 0
+     * and increases as more components get registered
+     * @tparam Component
+     * @return id of Component
+     */
+    template <class Component>
+    component_id getComponentId()
+    {
+        static component_id componentId = componentCounter++;
+        return componentId;
+    }
+
     /**
      * @brief Interface common to ComponentPools.
      * This is so that when an entity is destroyed, we can simply
@@ -62,15 +77,15 @@ namespace ECS
     {
     public:
         virtual ~IComponentPool() = default;
-        virtual void onEntityDestroyed(EntityId id) = 0;
+        virtual void onEntityDestroyed(entity_id id) = 0;
     };
 
     template <class Component>
     struct ComponentPool : public IComponentPool
     {
         std::vector<Component> components;
-        std::vector<ComponentIndex> entityIdToComponentIndex;
-        std::vector<EntityId> componentIndexToEntityId;
+        std::vector<component_index> entityIdToComponentIndex;
+        std::vector<entity_id> componentIndexToEntityId;
     
         ComponentPool() : components{},
             entityIdToComponentIndex(INITIAL_ENTITY_CAPACITY, INVALID_COMPONENT_INDEX),
@@ -82,7 +97,7 @@ namespace ECS
          * This method does not update an entity's componentMask.
          * @param id
          */
-        void assign(EntityId id)
+        void assign(entity_id id)
         {
             size_t entityCapacity = entityIdToComponentIndex.size();
             if (id >= entityCapacity)
@@ -96,7 +111,7 @@ namespace ECS
                 componentIndexToEntityId.resize(newSize, INVALID_ENTITY_ID);
             }
             // check to make sure component isn't already assigned
-            ComponentIndex index = entityIdToComponentIndex[id];
+            component_index index = entityIdToComponentIndex[id];
             if (index != INVALID_COMPONENT_INDEX) return;
 
             // add new component + update sparse sets
@@ -112,17 +127,17 @@ namespace ECS
          * This method does not update the entity's componentMask.
          * @param id
          */
-        void unassign(EntityId id)
+        void unassign(entity_id id)
         {
-            ComponentIndex index = entityIdToComponentIndex[id];
+            component_index index = entityIdToComponentIndex[id];
             if (index == INVALID_COMPONENT_INDEX) return;
 
             // we will copy the back to the component slot we want removed,
             // pop the back, then make sure the entity that had the back component
             // now points to the replaced slot, and that the replaced slot is
             // linked back to said entity
-            ComponentIndex backIndex = components.size() - 1;
-            EntityId backId = componentIndexToEntityId[backIndex];
+            component_index backIndex = components.size() - 1;
+            entity_id backId = componentIndexToEntityId[backIndex];
 
             components[index] = components[backIndex];
             components.pop_back();
@@ -132,7 +147,7 @@ namespace ECS
             componentIndexToEntityId[index] = backId;
         }
 
-        void onEntityDestroyed(EntityId id) override
+        void onEntityDestroyed(entity_id id) override
         {
             unassign(id);
         }
@@ -140,8 +155,6 @@ namespace ECS
 
     class Scene
     {
-        // Component registration
-        int componentCounter = 0;
         std::vector<IComponentPool*> componentPools;
 
         // Entity data
@@ -177,24 +190,11 @@ namespace ECS
         template <class Component>
         bool isComponentRegistered()
         {
-            ComponentId id = getComponentId<Component>();
+            component_id id = getComponentId<Component>();
             if (id >= componentPools.size()) return false;
             IComponentPool* pool = componentPools[id];
             if (pool == nullptr) return false;
             return true;
-        }
-
-        /**
-         * @brief Initializes the component id for a given Component. The id starts from 0
-         * and increases as more components get registered
-         * @tparam Component
-         * @return id of Component
-         */
-        template <class Component>
-        ComponentId getComponentId()
-        {
-            static ComponentId componentId = componentCounter++;
-            return componentId;
         }
 
         /**
@@ -206,7 +206,7 @@ namespace ECS
         void registerComponent()
         {
             if (isComponentRegistered<Component>()) return;
-            ComponentId id = getComponentId<Component>();
+            component_id id = getComponentId<Component>();
             if (id >= MAX_COMPONENTS)
             {
                 throw std::out_of_range("MAXIMUM COMPONENTS REACHED (" + std::to_string(MAX_COMPONENTS) + ")");
@@ -264,7 +264,7 @@ namespace ECS
             if (isAlive(entity))
             {
                 registerComponent<Component>();
-                ComponentId compId = getComponentId<Component>();
+                component_id compId = getComponentId<Component>();
                 entityInfoList[entity.id].componentMask.set(compId);
                 IComponentPool* pool = componentPools[compId];
                 ComponentPool<Component>* cpool = static_cast<ComponentPool<Component>*>(pool);
@@ -283,7 +283,7 @@ namespace ECS
         {
             if (!isComponentRegistered<Component>()) return nullptr;
             if (!isAlive(entity)) return nullptr;
-            ComponentId compId = getComponentId<Component>();
+            component_id compId = getComponentId<Component>();
             if (entityInfoList[entity.id].componentMask.test(compId))
             {
                 IComponentPool* pool = componentPools[compId];
@@ -303,7 +303,7 @@ namespace ECS
         {
             if (!isComponentRegistered<Component>()) return;
             if (!isAlive(entity)) return;
-            ComponentId compId = getComponentId<Component>();
+            component_id compId = getComponentId<Component>();
             entityInfoList[entity.id].componentMask.reset(compId);
             IComponentPool* pool = componentPools[compId];
             ComponentPool<Component>* cpool = static_cast<ComponentPool<Component>*>(pool);
@@ -314,38 +314,40 @@ namespace ECS
     template <class... Component>
     struct SceneView
     {
-        SceneView(Scene& scene) : 
-
-        struct Iterator
+        SceneView(Scene& scene) : scene(&scene)
         {
-            using iterator_category = std::forward_iterator_tag;
-            using difference_type = std::ptrdiff_t;
-            using value_type = int;
-            using pointer = int*;  // or also value_type*
-            using reference = int&;  // or also value_type&
+            if (sizeof...(Component) == 0)
+            {
+                all = true;
+            }
+            else
+            {
+                std::array<component_id> componentIds = {
+                    getComponentId<Component>()...
+                };
 
-            Iterator(pointer ptr) : m_ptr(ptr) {}
+                for (int i = 0; i < componentIds.size(); i++)
+                {
+                    componentMask.set(componentIds[i]);
+                }
+            }
+        }
 
-            reference operator*() const { return *m_ptr; }
-            pointer operator->() { return m_ptr; }
+        
 
-            // Prefix increment
-            Iterator& operator++() { m_ptr++; return *this; }
+        ForwardIterator<Entity> begin()
+        {
+            return ForwardIterator<Entity>();
+        }
 
-            // Postfix increment
-            Iterator operator++(int) { Iterator tmp = *this; ++(*this); return tmp; }
+        ForwardIterator<Entity> end()
+        {
+            return ForwardIterator<Entity>();
+        }
 
-            friend bool operator== (const Iterator& a, const Iterator& b) { return a.m_ptr == b.m_ptr; };
-            friend bool operator!= (const Iterator& a, const Iterator& b) { return a.m_ptr != b.m_ptr; };
-
-        private:
-            pointer m_ptr;
-
-        };
-
-        Iterator begin() { return Iterator(&m_data[0]); }
-        Iterator end() { return Iterator(&m_data[200]); }
-
-        private
+    private:
+        Scene* scene = nullptr;
+        ComponentMask componentMask{ };
+        bool all = false;
     };
 }

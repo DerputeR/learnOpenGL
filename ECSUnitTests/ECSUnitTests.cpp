@@ -69,11 +69,11 @@ namespace ECSUnitTests
 			transformPool.components[2].scale = { 1, 1, 1 };
 
 
-			std::vector<ECS::ComponentIndex> etc_expected(ECS::INITIAL_ENTITY_CAPACITY, ECS::INVALID_COMPONENT_INDEX);
+			std::vector<ECS::component_index> etc_expected(ECS::INITIAL_ENTITY_CAPACITY, ECS::INVALID_COMPONENT_INDEX);
 			etc_expected[0] = 0;
 			etc_expected[4] = 1;
 			etc_expected[3] = 2;
-			std::vector<ECS::EntityId> cte_expected(ECS::INITIAL_ENTITY_CAPACITY, ECS::INVALID_ENTITY_ID);
+			std::vector<ECS::entity_id> cte_expected(ECS::INITIAL_ENTITY_CAPACITY, ECS::INVALID_ENTITY_ID);
 			cte_expected[0] = 0;
 			cte_expected[1] = 4;
 			cte_expected[2] = 3;
