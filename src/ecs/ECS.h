@@ -71,16 +71,13 @@ namespace ECS
     template <class Component>
     struct ComponentPool : public IComponentPool
     {
-        SparseMap<entity_id, component_index, Component> componentMap;
-        std::vector<Component>& components;
-        std::vector<component_index>& entityIdToComponentIndex;
-        std::vector<entity_id>& componentIndexToEntityId;
+        SparseMap<entity_id, component_index> componentMap;
+        std::vector<Component> components;
     
         ComponentPool() :
             componentMap{ INVALID_ENTITY_ID, INVALID_COMPONENT_INDEX },
-            components { componentMap.packed },
-            entityIdToComponentIndex { componentMap.sparseMap },
-            componentIndexToEntityId { componentMap.packedMap } { }
+            components{ }
+        { }
 
         /**
          * @brief Creates a new Component and links it with id if one isn't already linked.
@@ -89,27 +86,8 @@ namespace ECS
          */
         void assign(entity_id id)
         {
-            size_t entityCapacity = entityIdToComponentIndex.size();
-            if (id >= entityCapacity)
-            {
-                size_t newSize = entityCapacity * 2;
-                while (id >= newSize) // this should almost never happen
-                {
-                    newSize *= 2;
-                }
-                entityIdToComponentIndex.resize(newSize, INVALID_COMPONENT_INDEX);
-                componentIndexToEntityId.resize(newSize, INVALID_ENTITY_ID);
-            }
-            // check to make sure component isn't already assigned
-            component_index index = entityIdToComponentIndex[id];
-            if (index != INVALID_COMPONENT_INDEX) return;
-
-            // add new component + update sparse sets
-            index = components.size();
             components.push_back(Component{ });
-
-            entityIdToComponentIndex[id] = index;
-            componentIndexToEntityId[index] = id;
+            componentMap.map(id);
         }
 
         /**
@@ -119,22 +97,12 @@ namespace ECS
          */
         void unassign(entity_id id)
         {
-            component_index index = entityIdToComponentIndex[id];
+            component_index index = componentMap.sparseMap[id];
             if (index == INVALID_COMPONENT_INDEX) return;
 
-            // we will copy the back to the component slot we want removed,
-            // pop the back, then make sure the entity that had the back component
-            // now points to the replaced slot, and that the replaced slot is
-            // linked back to said entity
-            component_index backIndex = components.size() - 1;
-            entity_id backId = componentIndexToEntityId[backIndex];
-
-            components[index] = components[backIndex];
+            componentMap.unmap(id);
+            components[id] = components.back();
             components.pop_back();
-
-            entityIdToComponentIndex[id] = INVALID_COMPONENT_INDEX;
-            componentIndexToEntityId[backIndex] = INVALID_ENTITY_ID;
-            componentIndexToEntityId[index] = backId;
         }
 
         void onEntityDestroyed(entity_id id) override
@@ -149,17 +117,10 @@ namespace ECS
 
         // Entity data
         unsigned int entityCapacity = INITIAL_ENTITY_CAPACITY;
-        unsigned int entityCount = 0;
-        std::vector<entity_id> sparseToPackedMap;
-        std::vector<size_t> packedToSparseMap;
+        SparseMap<entity_id, entity_id> entityMap;
         std::vector<ComponentMask> componentMasks;
         std::vector<Entity> liveList;
         std::deque<Entity> freeList;
-
-        // this is lazily-updated whenever a system or another function
-        // calls getEntities() only when the dirty flag is true
-        bool lazyListDirtyFlag = false;
-        std::vector<Entity> entitiesLazyList;
 
         /**
          * @brief Retrieves the next free Entity from the free list.
@@ -234,10 +195,9 @@ namespace ECS
         Entity createEntity();
 
         /**
-         * @brief Returns a read-only vector of all current living entities. This list is NOT a live list.
-         * @return Vector containing entities that are alive in the scene
+         * @brief Returns a read-only vector of all current living entities. This list is a LIVE list.
          */
-        const std::vector<Entity>& getEntities();
+        const std::vector<Entity>& getEntities() const;
 
         /**
          * @brief If the given entity is in the live entities list, it will
@@ -263,11 +223,10 @@ namespace ECS
             {
                 registerComponent<Component>();
                 component_id compId = getComponentId<Component>();
-                //entityInfoList[entity.id].componentMask.set(compId);
+                componentMasks[entityMap.sparseMap[entity.id]].set(compId);
                 IComponentPool* pool = componentPools[compId];
                 ComponentPool<Component>* cpool = static_cast<ComponentPool<Component>*>(pool);
                 cpool->assign(entity.id);
-                // adding a component does not modify an entity object itself so no need to mark the flag dirty
             }
         }
 
@@ -283,12 +242,12 @@ namespace ECS
             if (!isComponentRegistered<Component>()) return nullptr;
             if (!isAlive(entity)) return nullptr;
             component_id compId = getComponentId<Component>();
-            //if (entityInfoList[entity.id].componentMask.test(compId))
-            //{
-            //    IComponentPool* pool = componentPools[compId];
-            //    ComponentPool<Component>* cpool = static_cast<ComponentPool<Component>*>(pool);
-            //    return &(cpool->components[cpool->entityIdToComponentIndex[entity.id]]);
-            //}
+            if (componentMasks[entityMap.sparseMap[entity.id]].test(compId))
+            {
+                IComponentPool* pool = componentPools[compId];
+                ComponentPool<Component>* cpool = static_cast<ComponentPool<Component>*>(pool);
+                return &(cpool->components[cpool->componentMap.sparseMap[entity.id]]);
+            }
             return nullptr;
         }
 
@@ -303,11 +262,10 @@ namespace ECS
             if (!isComponentRegistered<Component>()) return;
             if (!isAlive(entity)) return;
             component_id compId = getComponentId<Component>();
-            //entityInfoList[entity.id].componentMask.reset(compId);
+            componentMasks[entityMap.sparseMap[entity.id]].reset(compId);
             IComponentPool* pool = componentPools[compId];
             ComponentPool<Component>* cpool = static_cast<ComponentPool<Component>*>(pool);
             cpool->unassign(entity.id);
-            // removing a component does not modify an entity object itself so no need to mark the flag dirty
         }
     };
 

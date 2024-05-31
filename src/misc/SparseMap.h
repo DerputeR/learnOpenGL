@@ -4,11 +4,12 @@
 
 /**
  * @brief Templated class to help create bidirectional maps using std::vector
- * The sparseMap will map index K to V, and the packedMap will map index V back to K.
- * @tparam K integer type used to index the maps
- * @tparam V values stored by the packed vector
+ * The sparseMap will map index K to I, and the packedMap will map index I back to V.
+ * Note that this will NOT manage a value vector; this is up to you to manage
+ * @tparam K integer type used to index sparseMap to get indices I
+ * @tparam I integer type used to index packedMap to get keys K
  */
-template <typename K, typename I, class V>
+template <typename K, typename I>
 struct SparseMap
 {
 private:
@@ -17,13 +18,16 @@ private:
 public:
     std::vector<I> sparseMap;
     std::vector<K> packedMap;
-    std::vector<V> packed;
 
     SparseMap(K invalidKey, I invalidIndex) :
         invalidKey{ invalidKey },
         invalidIndex{ invalidIndex } { }
 
-    void map(K key, V value)
+    /**
+     * @brief Appends packedMap and maps key to the new back
+     * @param key 
+     */
+    void map(K key)
     {
         if (key == invalidKey)
         {
@@ -47,12 +51,21 @@ public:
             sparseMap.resize(sparseSize);
         }
 
-        I packedIndex = packed.size();
+        I packedIndex = static_cast<I>(packedMap.size());
         packedMap.push_back(key);
-        packed.push_back(value);
         sparseMap[key] = packedIndex;
     }
 
+    /**
+     * @brief Removes the bi-directional mapping between a key and its index.
+     * 
+     * IMPORTANT: if you are using this SparseMap to work with another packed vector, make sure
+     * that you do the following steps on it so that its structure matches with packedMap:
+     * 1. vec[key] = vec.back()
+     * 2. vec.pop_back()
+     * 
+     * @param key 
+     */
     void unmap(K key)
     {
         // return if key is invalid
@@ -68,11 +81,9 @@ public:
         K backKey = packedMap.back();
         I backIndex = sparseMap[backKey];
 
-        // copy the back of packed and packedMap to index
-        packed[index] = packed[backIndex];
+        // copy the back packedMap to index
         packedMap[index] = backKey;
-        // pop the back of packed and packedMap
-        packed.pop_back();
+        // pop the back of packedMap
         packedMap.pop_back();
 
         // now that the back is located at index, update the key to point here

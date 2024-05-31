@@ -87,20 +87,20 @@ namespace ECSUnitTests
 			}
 
 			// compare entity to component sparse set
-			Assert::IsTrue(etc_expected.size() == transformPool.entityIdToComponentIndex.size());
+			Assert::IsTrue(etc_expected.size() == transformPool.componentMap.sparseMap.size());
 
 			for (size_t i = 0; i < components_expected.size(); i++)
 			{
-				Assert::IsTrue(etc_expected[i] == transformPool.entityIdToComponentIndex[i]);
+				Assert::IsTrue(etc_expected[i] == transformPool.componentMap.sparseMap[i]);
 			}
 
 
-			// compare component to entity sparse set
-			Assert::IsTrue(cte_expected.size() == transformPool.componentIndexToEntityId.size());
+			// compare component to entity packed set
+			Assert::IsTrue(cte_expected.size() == transformPool.componentMap.packedMap.size());
 
 			for (size_t i = 0; i < components_expected.size(); i++)
 			{
-				Assert::IsTrue(cte_expected[i] == transformPool.componentIndexToEntityId[i]);
+				Assert::IsTrue(cte_expected[i] == transformPool.componentMap.packedMap[i]);
 			}
 
 			// now removeComponent an entity
@@ -114,16 +114,16 @@ namespace ECSUnitTests
 			cte_expected[1] = 3;
 			cte_expected[2] = ECS::INVALID_ENTITY_ID;
 
-			Assert::IsTrue(etc_expected.size() == transformPool.entityIdToComponentIndex.size());
+			Assert::IsTrue(etc_expected.size() == transformPool.componentMap.sparseMap.size());
 			for (size_t i = 0; i < components_expected.size(); i++)
 			{
-				Assert::IsTrue(etc_expected[i] == transformPool.entityIdToComponentIndex[i]);
+				Assert::IsTrue(etc_expected[i] == transformPool.componentMap.sparseMap[i]);
 			}
 
-			Assert::IsTrue(cte_expected.size() == transformPool.componentIndexToEntityId.size());
+			Assert::IsTrue(cte_expected.size() == transformPool.componentMap.packedMap.size());
 			for (size_t i = 0; i < components_expected.size(); i++)
 			{
-				Assert::IsTrue(cte_expected[i] == transformPool.componentIndexToEntityId[i]);
+				Assert::IsTrue(cte_expected[i] == transformPool.componentMap.packedMap[i]);
 			}
 		}
 	};

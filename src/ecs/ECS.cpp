@@ -18,7 +18,8 @@ namespace ECS
     }
 
     Scene::Scene() : freeList(INITIAL_ENTITY_CAPACITY),
-        entityCapacity{ INITIAL_ENTITY_CAPACITY }
+        entityCapacity{ INITIAL_ENTITY_CAPACITY },
+        entityMap{ ECS::INVALID_ENTITY_ID, ECS::INVALID_ENTITY_ID } 
     {
         for (entity_id i = 0; i < entityCapacity; i++)
         {
@@ -29,28 +30,15 @@ namespace ECS
     Entity Scene::createEntity()
     {
         Entity ent = this->nextFree();
-        //entityInfoList[ent.id] = EntityInfo{ ent, ComponentMask{} };
-        entityCount++;
-        //lazyListDirtyFlag = true;
+        entityMap.map(ent.id);
+        liveList.push_back(ent);
         return ent;
     }
 
-    //const std::vector<Entity>& Scene::getEntities()
-    //{
-    //    if (lazyListDirtyFlag)
-    //    {
-    //        entitiesLazyList.clear();
-    //        for (entity_id i = 0; i < entityInfoList.size(); i++)
-    //        {
-    //            if (entityInfoList[i].entity != INVALID_ENTITY)
-    //            {
-    //                entitiesLazyList.push_back(entityInfoList[i].entity);
-    //            }
-    //        }
-    //        lazyListDirtyFlag = false;
-    //    }
-    //    return entitiesLazyList;
-    //}
+    const std::vector<Entity>& Scene::getEntities() const
+    {
+        return liveList;
+    }
 
     Entity Scene::nextFree()
     {
@@ -61,7 +49,6 @@ namespace ECS
                 freeList.push_back(Entity {i, 0});
             }
             entityCapacity *= 2;
-            //entityInfoList.resize(entityCapacity, INVALID_ENTITY_INFO);
         }
         Entity ent = freeList.front();
         freeList.pop_front();
@@ -70,9 +57,9 @@ namespace ECS
 
     bool Scene::isAlive(Entity entity)
     {
-      /*  return (entity.id != INVALID_ENTITY_ID
-            && entity.id < entityInfoList.size()
-            && entity.version == entityInfoList[entity.id].version);*/
+        return (entity.id != INVALID_ENTITY_ID
+            && entity.id < entityMap.sparseMap.size()
+            && entity.version == liveList[entityMap.sparseMap[entity.id]].version);
         return false;
     }
 
@@ -80,11 +67,11 @@ namespace ECS
     {
         if (isAlive(entity))
         {
-            //entityInfoList[entity.id] = INVALID_ENTITY_INFO;
+            entityMap.unmap(entity.id);
+            liveList[entity.id] = liveList.back();
+            liveList.pop_back();
             entity.version++;
             freeList.push_back(entity);
-            entityCount--;
-            //lazyListDirtyFlag = true;
         }
     }
 }
