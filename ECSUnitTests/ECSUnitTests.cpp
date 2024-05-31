@@ -73,10 +73,7 @@ namespace ECSUnitTests
 			etc_expected[0] = 0;
 			etc_expected[4] = 1;
 			etc_expected[3] = 2;
-			std::vector<ECS::entity_id> cte_expected(ECS::INITIAL_ENTITY_CAPACITY, ECS::INVALID_ENTITY_ID);
-			cte_expected[0] = 0;
-			cte_expected[1] = 4;
-			cte_expected[2] = 3;
+			std::vector<ECS::entity_id> cte_expected{ 0, 4, 3 };
 
 			// compare dense array
 			Assert::IsTrue(components_expected.size() == transformPool.components.size());
@@ -87,23 +84,20 @@ namespace ECSUnitTests
 			}
 
 			// compare entity to component sparse set
-			Assert::IsTrue(etc_expected.size() == transformPool.componentMap.sparseMap.size());
-
-			for (size_t i = 0; i < components_expected.size(); i++)
+			Assert::IsTrue(etc_expected.size() == transformPool.componentMap.getSparse().size());
+			for (ECS::entity_id i = 0; i < static_cast<ECS::entity_id>(components_expected.size()); i++)
 			{
-				Assert::IsTrue(etc_expected[i] == transformPool.componentMap.sparseMap[i]);
+				Assert::IsTrue(etc_expected[i] == transformPool.componentMap[i]);
 			}
-
 
 			// compare component to entity packed set
-			Assert::IsTrue(cte_expected.size() == transformPool.componentMap.packedMap.size());
-
-			for (size_t i = 0; i < components_expected.size(); i++)
+			Assert::IsTrue(cte_expected.size() == transformPool.componentMap.getPacked().size());
+			for (ECS::component_index i = 0; i < static_cast<ECS::component_index>(components_expected.size()); i++)
 			{
-				Assert::IsTrue(cte_expected[i] == transformPool.componentMap.packedMap[i]);
+				Assert::IsTrue(cte_expected[i] == transformPool.componentMap(i));
 			}
 
-			// now removeComponent an entity
+			// now remove an entity
 			components_expected[1] = components_expected[2];
 			components_expected.pop_back();
 			transformPool.unassign(4);
@@ -112,18 +106,20 @@ namespace ECSUnitTests
 			etc_expected[3] = 1;
 			cte_expected[0] = 0;
 			cte_expected[1] = 3;
-			cte_expected[2] = ECS::INVALID_ENTITY_ID;
+			cte_expected.pop_back();
 
-			Assert::IsTrue(etc_expected.size() == transformPool.componentMap.sparseMap.size());
-			for (size_t i = 0; i < components_expected.size(); i++)
+			// compare entity to component sparse set
+			Assert::IsTrue(etc_expected.size() == transformPool.componentMap.getSparse().size());
+			for (ECS::entity_id i = 0; i < static_cast<ECS::entity_id>(components_expected.size()); i++)
 			{
-				Assert::IsTrue(etc_expected[i] == transformPool.componentMap.sparseMap[i]);
+				Assert::IsTrue(etc_expected[i] == transformPool.componentMap[i]);
 			}
 
-			Assert::IsTrue(cte_expected.size() == transformPool.componentMap.packedMap.size());
-			for (size_t i = 0; i < components_expected.size(); i++)
+			// compare component to entity packed set
+			Assert::IsTrue(cte_expected.size() == transformPool.componentMap.getPacked().size());
+			for (ECS::component_index i = 0; i < static_cast<ECS::component_index>(components_expected.size()); i++)
 			{
-				Assert::IsTrue(cte_expected[i] == transformPool.componentMap.packedMap[i]);
+				Assert::IsTrue(cte_expected[i] == transformPool.componentMap(i));
 			}
 		}
 	};
@@ -138,7 +134,7 @@ namespace ECSUnitTests
 	public:
 		TEST_METHOD_INITIALIZE(ECSInit)
 		{
-			scene = ECS::Scene{};
+			scene = ECS::Scene();
 			player = scene.createEntity();
 			camera = scene.createEntity();
 			physObj = scene.createEntity();

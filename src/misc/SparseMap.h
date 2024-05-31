@@ -10,18 +10,26 @@
  * @tparam I integer type used to index packedMap to get keys K
  */
 template <typename K, typename I>
-struct SparseMap
+class SparseMap
 {
 private:
-    K invalidKey;
-    I invalidIndex;
-public:
     std::vector<I> sparseMap;
     std::vector<K> packedMap;
 
+    K invalidKey;
+    I invalidIndex;
+public:
+
     SparseMap(K invalidKey, I invalidIndex) :
         invalidKey{ invalidKey },
-        invalidIndex{ invalidIndex } { }
+        invalidIndex{ invalidIndex }
+    { }
+
+    SparseMap(K invalidKey, I invalidIndex, size_t initialSize) :
+        invalidKey{ invalidKey },
+        invalidIndex{ invalidIndex },
+        sparseMap(initialSize, invalidIndex)
+    { }
 
     /**
      * @brief Appends packedMap and maps key to the new back
@@ -59,10 +67,10 @@ public:
     /**
      * @brief Removes the bi-directional mapping between a key and its index.
      * 
-     * IMPORTANT: if you are using this SparseMap to work with another packed vector, make sure
-     * that you do the following steps on it so that its structure matches with packedMap:
-     * 1. vec[key] = vec.back()
-     * 2. vec.pop_back()
+     * IMPORTANT: if you are using SparseMap to work with another packed vector, make sure
+     * that you do the following steps BEFORE calling unmap:
+     * 1. vec[sparseMap[key]] = vec.back();
+     * 2. vec.pop_back();
      * 
      * @param key 
      */
@@ -91,5 +99,51 @@ public:
 
         // finally, unmap key
         sparseMap[key] = invalidIndex;
+    }
+
+    /**
+     * @brief Get the index mapped to the given key. If key isn't mapped, this returns the value of invalidIndex,
+     * which was set during initialization
+     * @param key 
+     * @return Index mapped to key 
+     */
+    const I& operator[](K key) const
+    {
+        if (key == invalidKey || key >= sparseMap.size())
+        {
+            return invalidIndex;
+        }
+        return sparseMap[key];
+    }
+
+    /**
+     * @brief Get the key mapped to the given index. If the index isn't mapped, this returns the value of invalidKey,
+     * which was set during initialization
+     * @param index 
+     * @return Key mapped to index
+     */
+    const K& operator()(I index) const
+    {
+        if (index == invalidIndex || index >= packedMap.size())
+        {
+            return invalidKey;
+        }
+        return packedMap[index];
+    }
+
+    /**
+     * @return Get read-only reference to the packed vector
+     */
+    const std::vector<K>& getPacked() const
+    {
+        return packedMap;
+    }
+
+    /**
+     * @return Get read-only reference to the sparse vector
+     */
+    const std::vector<I>& getSparse() const
+    {
+        return sparseMap;
     }
 };

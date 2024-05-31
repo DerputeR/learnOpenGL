@@ -19,7 +19,7 @@ namespace ECS
 
     Scene::Scene() : freeList(INITIAL_ENTITY_CAPACITY),
         entityCapacity{ INITIAL_ENTITY_CAPACITY },
-        entityMap{ ECS::INVALID_ENTITY_ID, ECS::INVALID_ENTITY_ID } 
+        entityMap( ECS::INVALID_ENTITY_ID, ECS::INVALID_ENTITY_ID, INITIAL_ENTITY_CAPACITY ) 
     {
         for (entity_id i = 0; i < entityCapacity; i++)
         {
@@ -32,6 +32,7 @@ namespace ECS
         Entity ent = this->nextFree();
         entityMap.map(ent.id);
         liveList.push_back(ent);
+        componentMasks.push_back({});
         return ent;
     }
 
@@ -57,19 +58,24 @@ namespace ECS
 
     bool Scene::isAlive(Entity entity)
     {
-        return (entity.id != INVALID_ENTITY_ID
-            && entity.id < entityMap.sparseMap.size()
-            && entity.version == liveList[entityMap.sparseMap[entity.id]].version);
-        return false;
+        return (entityMap[entity.id] != INVALID_ENTITY_ID
+            && entity.version == liveList[entityMap[entity.id]].version);
     }
 
     void Scene::destroyEntity(Entity entity)
     {
         if (isAlive(entity))
         {
-            entityMap.unmap(entity.id);
-            liveList[entity.id] = liveList.back();
+            // remove from live list
+            liveList[entityMap[entity.id]] = liveList.back();
             liveList.pop_back();
+
+            // remove associated component mask
+            componentMasks[entityMap[entity.id]] = componentMasks.back();
+            componentMasks.pop_back();
+
+            entityMap.unmap(entity.id);
+
             entity.version++;
             freeList.push_back(entity);
         }

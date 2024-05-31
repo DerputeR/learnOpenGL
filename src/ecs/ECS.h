@@ -75,7 +75,7 @@ namespace ECS
         std::vector<Component> components;
     
         ComponentPool() :
-            componentMap{ INVALID_ENTITY_ID, INVALID_COMPONENT_INDEX },
+            componentMap( INVALID_ENTITY_ID, INVALID_COMPONENT_INDEX, INITIAL_ENTITY_CAPACITY ),
             components{ }
         { }
 
@@ -86,6 +86,7 @@ namespace ECS
          */
         void assign(entity_id id)
         {
+            if (componentMap[id] != INVALID_COMPONENT_INDEX) return;
             components.push_back(Component{ });
             componentMap.map(id);
         }
@@ -97,12 +98,10 @@ namespace ECS
          */
         void unassign(entity_id id)
         {
-            component_index index = componentMap.sparseMap[id];
-            if (index == INVALID_COMPONENT_INDEX) return;
-
-            componentMap.unmap(id);
-            components[id] = components.back();
+            if (componentMap[id] == INVALID_COMPONENT_INDEX) return;
+            components[componentMap[id]] = components.back();
             components.pop_back();
+            componentMap.unmap(id);
         }
 
         void onEntityDestroyed(entity_id id) override
@@ -223,7 +222,7 @@ namespace ECS
             {
                 registerComponent<Component>();
                 component_id compId = getComponentId<Component>();
-                componentMasks[entityMap.sparseMap[entity.id]].set(compId);
+                componentMasks[entityMap[entity.id]].set(compId);
                 IComponentPool* pool = componentPools[compId];
                 ComponentPool<Component>* cpool = static_cast<ComponentPool<Component>*>(pool);
                 cpool->assign(entity.id);
@@ -242,11 +241,11 @@ namespace ECS
             if (!isComponentRegistered<Component>()) return nullptr;
             if (!isAlive(entity)) return nullptr;
             component_id compId = getComponentId<Component>();
-            if (componentMasks[entityMap.sparseMap[entity.id]].test(compId))
+            if (componentMasks[entityMap[entity.id]].test(compId))
             {
                 IComponentPool* pool = componentPools[compId];
                 ComponentPool<Component>* cpool = static_cast<ComponentPool<Component>*>(pool);
-                return &(cpool->components[cpool->componentMap.sparseMap[entity.id]]);
+                return &(cpool->components[cpool->componentMap[entity.id]]);
             }
             return nullptr;
         }
@@ -262,7 +261,7 @@ namespace ECS
             if (!isComponentRegistered<Component>()) return;
             if (!isAlive(entity)) return;
             component_id compId = getComponentId<Component>();
-            componentMasks[entityMap.sparseMap[entity.id]].reset(compId);
+            componentMasks[entityMap[entity.id]].reset(compId);
             IComponentPool* pool = componentPools[compId];
             ComponentPool<Component>* cpool = static_cast<ComponentPool<Component>*>(pool);
             cpool->unassign(entity.id);
