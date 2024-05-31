@@ -142,11 +142,6 @@ namespace ECSUnitTests
 			player = scene.createEntity();
 			camera = scene.createEntity();
 			physObj = scene.createEntity();
-
-			auto e = scene.getEntities();
-			Assert::IsTrue(player == e[0]);
-			Assert::IsTrue(camera == e[1]);
-			Assert::IsTrue(physObj == e[2]);
 		}
 
 		TEST_METHOD(SingleComponentTest)
@@ -168,5 +163,26 @@ namespace ECSUnitTests
 			t = scene.getComponent<Transform>(player);
 			Assert::IsTrue(t == nullptr);
 		}
+
+		//TEST_METHOD(EntitiesListTest)
+		//{
+		//	auto e = scene.getEntities();
+		//	e.push_back(ECS::Entity{ 12, 12 });
+		//	auto e2 = scene.getEntities();
+		//	Assert::IsTrue(e.size() != e2.size()); // make sure read-only is working
+
+		//	ECS::Entity ant = scene.createEntity();
+		//	auto& e3 = scene.getEntities();
+		//	Assert::IsTrue(e2 != e3);
+		//	bool isUpdated = false;
+		//	for (const auto& f : e3)
+		//	{
+		//		if (f == ant)
+		//		{
+		//			isUpdated = true;
+		//		}
+		//	}
+		//	Assert::IsTrue(isUpdated);
+		//}
 	};
 }

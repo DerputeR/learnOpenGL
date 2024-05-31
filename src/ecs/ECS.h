@@ -5,6 +5,7 @@
 #include <deque>
 #include <stdexcept>
 #include <string>
+#include "../misc/SparseMap.h"
 #include "../misc/Iterators.h"
 
 namespace ECS
@@ -23,6 +24,7 @@ namespace ECS
     const entity_version INVALID_ENTITY_VERSION = -1;
     const component_index INVALID_COMPONENT_INDEX = -1;
 
+    // public-facing Entity used for indexing for components and systems
     struct Entity
     {
         entity_id id;
@@ -36,21 +38,7 @@ namespace ECS
         bool operator==(const Entity& other) const;
     };
 
-    struct EntityInfo
-    {
-        entity_version version;
-        ComponentMask componentMask;
-
-        /**
-         * @brief Returns true if the version and bitmask match.
-         * @param other
-         * @return
-         */
-        bool operator==(const EntityInfo& other) const;
-    };
-
     const Entity INVALID_ENTITY{ INVALID_ENTITY_ID, INVALID_ENTITY_VERSION };
-    const EntityInfo INVALID_ENTITY_INFO{ INVALID_ENTITY_VERSION, ComponentMask{} };
 
     extern int componentCounter; // defined in ECS.cpp
 
@@ -83,14 +71,16 @@ namespace ECS
     template <class Component>
     struct ComponentPool : public IComponentPool
     {
-        std::vector<Component> components;
-        std::vector<component_index> entityIdToComponentIndex;
-        std::vector<entity_id> componentIndexToEntityId;
+        SparseMap<entity_id, component_index, Component> componentMap;
+        std::vector<Component>& components;
+        std::vector<component_index>& entityIdToComponentIndex;
+        std::vector<entity_id>& componentIndexToEntityId;
     
-        ComponentPool() : components{},
-            entityIdToComponentIndex(INITIAL_ENTITY_CAPACITY, INVALID_COMPONENT_INDEX),
-            componentIndexToEntityId(INITIAL_ENTITY_CAPACITY, INVALID_ENTITY_ID)
-        { }
+        ComponentPool() :
+            componentMap{ INVALID_ENTITY_ID, INVALID_COMPONENT_INDEX },
+            components { componentMap.packed },
+            entityIdToComponentIndex { componentMap.sparseMap },
+            componentIndexToEntityId { componentMap.packedMap } { }
 
         /**
          * @brief Creates a new Component and links it with id if one isn't already linked.
@@ -160,8 +150,16 @@ namespace ECS
         // Entity data
         unsigned int entityCapacity = INITIAL_ENTITY_CAPACITY;
         unsigned int entityCount = 0;
-        std::vector<EntityInfo> entityInfoList;
+        std::vector<entity_id> sparseToPackedMap;
+        std::vector<size_t> packedToSparseMap;
+        std::vector<ComponentMask> componentMasks;
+        std::vector<Entity> liveList;
         std::deque<Entity> freeList;
+
+        // this is lazily-updated whenever a system or another function
+        // calls getEntities() only when the dirty flag is true
+        bool lazyListDirtyFlag = false;
+        std::vector<Entity> entitiesLazyList;
 
         /**
          * @brief Retrieves the next free Entity from the free list.
@@ -236,10 +234,10 @@ namespace ECS
         Entity createEntity();
 
         /**
-         * @brief Returns a vector of all current living entities. This list is NOT a live list, and modifying it has no bearing on the entities in this scene.
-         * @return Live entities vector
+         * @brief Returns a read-only vector of all current living entities. This list is NOT a live list.
+         * @return Vector containing entities that are alive in the scene
          */
-        std::vector<Entity> getEntities();
+        const std::vector<Entity>& getEntities();
 
         /**
          * @brief If the given entity is in the live entities list, it will
@@ -265,10 +263,11 @@ namespace ECS
             {
                 registerComponent<Component>();
                 component_id compId = getComponentId<Component>();
-                entityInfoList[entity.id].componentMask.set(compId);
+                //entityInfoList[entity.id].componentMask.set(compId);
                 IComponentPool* pool = componentPools[compId];
                 ComponentPool<Component>* cpool = static_cast<ComponentPool<Component>*>(pool);
                 cpool->assign(entity.id);
+                // adding a component does not modify an entity object itself so no need to mark the flag dirty
             }
         }
 
@@ -284,12 +283,12 @@ namespace ECS
             if (!isComponentRegistered<Component>()) return nullptr;
             if (!isAlive(entity)) return nullptr;
             component_id compId = getComponentId<Component>();
-            if (entityInfoList[entity.id].componentMask.test(compId))
-            {
-                IComponentPool* pool = componentPools[compId];
-                ComponentPool<Component>* cpool = static_cast<ComponentPool<Component>*>(pool);
-                return &(cpool->components[cpool->entityIdToComponentIndex[entity.id]]);
-            }
+            //if (entityInfoList[entity.id].componentMask.test(compId))
+            //{
+            //    IComponentPool* pool = componentPools[compId];
+            //    ComponentPool<Component>* cpool = static_cast<ComponentPool<Component>*>(pool);
+            //    return &(cpool->components[cpool->entityIdToComponentIndex[entity.id]]);
+            //}
             return nullptr;
         }
 
@@ -304,10 +303,11 @@ namespace ECS
             if (!isComponentRegistered<Component>()) return;
             if (!isAlive(entity)) return;
             component_id compId = getComponentId<Component>();
-            entityInfoList[entity.id].componentMask.reset(compId);
+            //entityInfoList[entity.id].componentMask.reset(compId);
             IComponentPool* pool = componentPools[compId];
             ComponentPool<Component>* cpool = static_cast<ComponentPool<Component>*>(pool);
             cpool->unassign(entity.id);
+            // removing a component does not modify an entity object itself so no need to mark the flag dirty
         }
     };
 
@@ -331,9 +331,7 @@ namespace ECS
                     componentMask.set(componentIds[i]);
                 }
             }
-        }
-
-        
+        }        
 
         ForwardIterator<Entity> begin()
         {
