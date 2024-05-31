@@ -164,25 +164,25 @@ namespace ECSUnitTests
 			Assert::IsTrue(t == nullptr);
 		}
 
-		//TEST_METHOD(EntitiesListTest)
-		//{
-		//	auto e = scene.getEntities();
-		//	e.push_back(ECS::Entity{ 12, 12 });
-		//	auto e2 = scene.getEntities();
-		//	Assert::IsTrue(e.size() != e2.size()); // make sure read-only is working
+		TEST_METHOD(EntitiesListTest)
+		{
+			auto e = scene.getEntities();
+			e.push_back(ECS::Entity{ 12, 12 });
+			auto e2 = scene.getEntities();
+			Assert::IsTrue(e.size() != e2.size()); // make sure read-only is working
 
-		//	ECS::Entity ant = scene.createEntity();
-		//	auto& e3 = scene.getEntities();
-		//	Assert::IsTrue(e2 != e3);
-		//	bool isUpdated = false;
-		//	for (const auto& f : e3)
-		//	{
-		//		if (f == ant)
-		//		{
-		//			isUpdated = true;
-		//		}
-		//	}
-		//	Assert::IsTrue(isUpdated);
-		//}
+			ECS::Entity ant = scene.createEntity();
+			auto& e3 = scene.getEntities();
+			Assert::IsTrue(e2 != e3);
+			bool isUpdated = false;
+			for (const auto& f : e3)
+			{
+				if (f == ant)
+				{
+					isUpdated = true;
+				}
+			}
+			Assert::IsTrue(isUpdated);
+		}
 	};
 }

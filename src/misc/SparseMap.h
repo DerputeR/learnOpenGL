@@ -35,11 +35,11 @@ public:
         }
         size_t sparseSize = sparseMap.size();
         size_t newSize = sparseSize;
-        while (key > newSize)
+        while (key >= newSize)
         {
             if (newSize == 0)
             {
-                newSize = key + 1;
+                newSize = 10;
             }
             else
             {
@@ -48,7 +48,7 @@ public:
         }
         if (newSize > sparseSize)
         {
-            sparseMap.resize(sparseSize);
+            sparseMap.resize(newSize, invalidIndex);
         }
 
         I packedIndex = static_cast<I>(packedMap.size());
