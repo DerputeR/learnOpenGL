@@ -6,7 +6,8 @@
 #include <stdexcept>
 #include <string>
 #include "../misc/SparseMap.h"
-#include "../misc/Iterators.h"
+#include <iterator>
+#include <cstddef>
 
 namespace ECS
 {
@@ -117,9 +118,9 @@ namespace ECS
         // Entity data
         unsigned int entityCapacity = INITIAL_ENTITY_CAPACITY;
         SparseMap<entity_id, entity_id> entityMap;
-        std::vector<ComponentMask> componentMasks;
-        std::vector<Entity> liveList;
-        std::deque<Entity> freeList;
+        std::vector<ComponentMask> componentMasks; // packed and mapped to entityMap
+        std::vector<Entity> liveList; // packed and mapped to entityMap
+        std::deque<Entity> freeList; // packed, but NOT mapped to entityMap
 
         /**
          * @brief Retrieves the next free Entity from the free list.
@@ -194,9 +195,14 @@ namespace ECS
         Entity createEntity();
 
         /**
-         * @brief Returns a read-only vector of all current living entities. This list is a LIVE list.
+         * @return Returns a read-only vector of all current living entities. This list is a LIVE list.
          */
         const std::vector<Entity>& getEntities() const;
+
+        /**
+         * @return Returns a read-only vector of all current living entities' component masks. This list is a LIVE list.
+         */
+        const std::vector<ComponentMask>& getComponentMasks() const;
 
         /**
          * @brief If the given entity is in the live entities list, it will
@@ -268,6 +274,33 @@ namespace ECS
         }
     };
 
+    struct EntityIterator
+    {
+        using iterator_category = std::forward_iterator_tag;
+        using difference_type = std::ptrdiff_t;
+        using value_type = Entity;
+        using pointer = value_type*;
+        using reference = value_type&;
+
+        Scene* scene = nullptr;
+        const std::vector<Entity>* entities = nullptr;
+        const std::vector<ComponentMask>* entityMasks = nullptr;
+        ComponentMask mask;
+        size_t index = -1;
+        bool all = false;
+
+        EntityIterator(Scene* scene, bool all, ComponentMask mask);
+
+        value_type operator*() const;
+
+        EntityIterator& operator++();
+
+        bool operator==(const EntityIterator& b) const;
+        bool operator!=(const EntityIterator& b) const;
+
+        bool isValidIndex(size_t index);
+    };
+
     template <class... Component>
     struct SceneView
     {
@@ -288,16 +321,11 @@ namespace ECS
                     componentMask.set(componentIds[i]);
                 }
             }
-        }        
+        }     
 
-        ForwardIterator<Entity> begin()
+        EntityIterator begin()
         {
-            return ForwardIterator<Entity>();
-        }
-
-        ForwardIterator<Entity> end()
-        {
-            return ForwardIterator<Entity>();
+            return EntityIterator(scene, all, componentMask);
         }
 
     private:

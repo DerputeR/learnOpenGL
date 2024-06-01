@@ -41,6 +41,11 @@ namespace ECS
         return liveList;
     }
 
+    const std::vector<ComponentMask>& Scene::getComponentMasks() const
+    {
+        return componentMasks;
+    }
+
     Entity Scene::nextFree()
     {
         if (freeList.size() == 0)
@@ -79,5 +84,44 @@ namespace ECS
             entity.version++;
             freeList.push_back(entity);
         }
+    }
+
+    EntityIterator::EntityIterator(Scene* scene, bool all, ComponentMask mask)
+        : scene(scene), all(all), mask(mask),
+        entities(&(scene->getEntities())), entityMasks(&(scene->getComponentMasks()))
+    {
+        index = entities->size() > 0 ? 0 : -1;
+        if (!all)
+        {
+            while (index < entities->size() && !isValidIndex(index)) index++;
+            if (index )
+        }
+    }
+
+    Entity EntityIterator::operator*() const
+    {
+        return (*entities)[index];
+    }
+
+    EntityIterator& EntityIterator::operator++()
+    {
+        return *this;
+    }
+
+    bool EntityIterator::operator==(const EntityIterator& b) const
+    {
+        return index == b.index
+            && scene == b.scene
+            && mask == b.mask;
+    }
+
+    bool EntityIterator::operator!=(const EntityIterator& b) const
+    {
+        return !(*this == b);
+    }
+
+    bool EntityIterator::isValidIndex(size_t index)
+    {
+        return (all || (mask & (*entityMasks)[index]) != 0);
     }
 }

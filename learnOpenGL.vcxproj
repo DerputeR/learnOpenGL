@@ -184,7 +184,6 @@
     <ClInclude Include="src\entities\Entity.h" />
     <ClInclude Include="src\entities\OldTransform.h" />
     <ClInclude Include="src\entities\player\Player.h" />
-    <ClInclude Include="src\misc\Iterators.h" />
     <ClInclude Include="src\misc\SparseMap.h" />
     <ClInclude Include="src\scene\Node.h" />
     <ClInclude Include="src\gui\InfoOverlay.h" />

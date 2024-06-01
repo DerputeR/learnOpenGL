@@ -1037,9 +1037,6 @@
     <ClInclude Include="src\ecs\ECS.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\misc\Iterators.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\misc\SparseMap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
