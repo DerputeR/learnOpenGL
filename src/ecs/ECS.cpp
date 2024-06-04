@@ -86,17 +86,14 @@ namespace ECS
         }
     }
 
-    EntityIterator::EntityIterator(Scene* scene, bool all, ComponentMask mask)
-        : scene(scene), all(all), mask(mask),
-        entities(&(scene->getEntities())), entityMasks(&(scene->getComponentMasks()))
-    {
-        index = entities->size() > 0 ? 0 : -1;
-        if (!all)
-        {
-            while (index < entities->size() && !isValidIndex(index)) index++;
-            if (index )
-        }
-    }
+    EntityIterator::EntityIterator(Scene* scene, bool all, ComponentMask mask, size_t startIndex)
+        : scene(scene),
+        all(all),
+        mask(mask),
+        entities(&(scene->getEntities())),
+        entityMasks(&(scene->getComponentMasks())),
+        index(startIndex)
+    { }
 
     Entity EntityIterator::operator*() const
     {
