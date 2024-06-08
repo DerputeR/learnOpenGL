@@ -188,6 +188,7 @@ namespace ECSUnitTests
 		ECS::Entity player;
 		ECS::Entity camera;
 		ECS::Entity physObj;
+		ECS::Entity dummy;
 
 	public:
 		TEST_METHOD_INITIALIZE(ECSInit)
@@ -196,27 +197,83 @@ namespace ECSUnitTests
 			player = scene.createEntity();
 			camera = scene.createEntity();
 			physObj = scene.createEntity();
+			dummy = scene.createEntity();
 
 			scene.addComponent<Transform>(player);
 			scene.addComponent<Transform>(camera);
-			scene.addComponent<Transform>(physObj);
+			scene.getComponent<Transform>(camera)->position.y = 1.5f;
 
+			scene.addComponent<Transform>(physObj);
+			scene.getComponent<Transform>(physObj)->angles = { 45.0f, 45.0f, 45.0f };
 			scene.addComponent<Rigidbody>(physObj);
+			scene.getComponent<Rigidbody>(physObj)->acceleration.y = -9.81f;
+
+			scene.addComponent<Rigidbody>(dummy);
+
 		}
 
 		TEST_METHOD(AllComponentsView)
 		{
+			ECS::SceneView<> entities{ scene };
+			std::vector<ECS::Entity> listedEntities;
+			std::vector<ECS::Entity> expectedEntities { player, camera, physObj, dummy };
+			for (auto& entity : entities)
+			{
+				listedEntities.push_back(entity);
+			}
 
+			for (int i = 0; i < listedEntities.size(); i++)
+			{
+				Assert::IsTrue(listedEntities[i] == expectedEntities[i]);
+			}
 		}
 
-		TEST_METHOD(SingleComponentView)
+		TEST_METHOD(SingleComponentView_Transform)
 		{
+			ECS::SceneView<Transform> entities{ scene };
+			std::vector<ECS::Entity> listedEntities;
+			std::vector<ECS::Entity> expectedEntities{ player, camera, physObj };
+			for (auto& entity : entities)
+			{
+				listedEntities.push_back(entity);
+			}
 
+			for (int i = 0; i < listedEntities.size(); i++)
+			{
+				Assert::IsTrue(listedEntities[i] == expectedEntities[i]);
+			}
 		}
 
-		TEST_METHOD(MultiComponentView)
+		TEST_METHOD(SingleComponentView_Rigidbody)
 		{
+			ECS::SceneView<Rigidbody> entities{ scene };
+			std::vector<ECS::Entity> listedEntities;
+			std::vector<ECS::Entity> expectedEntities{ physObj, dummy };
+			for (auto& entity : entities)
+			{
+				listedEntities.push_back(entity);
+			}
 
+			for (int i = 0; i < listedEntities.size(); i++)
+			{
+				Assert::IsTrue(listedEntities[i] == expectedEntities[i]);
+			}
+		}
+
+		TEST_METHOD(MultiComponentView_TransformAndRigidbody)
+		{
+			ECS::SceneView<Transform, Rigidbody> entities{ scene };
+			std::vector<ECS::Entity> listedEntities;
+			std::vector<ECS::Entity> expectedEntities{ physObj };
+			for (auto& entity : entities)
+			{
+				listedEntities.push_back(entity);
+			}
+
+			for (int i = 0; i < listedEntities.size(); i++)
+			{
+				Assert::IsTrue(listedEntities[i] == expectedEntities[i]);
+			}
 		}
 	};
 }

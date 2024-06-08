@@ -100,20 +100,26 @@ namespace ECS
         return (*entities)[index];
     }
 
+    void EntityIterator::gotoFirstValid()
+    {
+        while (index < entityMasks->size() && !isValidIndex(index))
+        {
+            index += 1;
+        }
+    }
+
     EntityIterator& EntityIterator::operator++()
     {
         do {
             index += 1;
-        } while (!isValidIndex(index));
+        } while (index < entityMasks->size() && !isValidIndex(index));
         return *this;
     }
 
     EntityIterator EntityIterator::operator++(int)
     {
         EntityIterator beforeInc = *this;
-        do {
-            index += 1;
-        } while (!isValidIndex(index));
+        ++(*this);
         return beforeInc;
     }
 

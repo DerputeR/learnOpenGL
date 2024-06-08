@@ -236,11 +236,16 @@ namespace ECS
         }
 
         /**
-         * @brief Retrives a pointer to the Component attached to the given entity, if one exists
+         * @brief Retrives a pointer to the Component attached to the given entity, if one exists.
+         * Note: DO NOT store this pointer as the address it points to
+         * could become invalid any time removeComponent gets called.
+         * Always call getComponent instead!
          * @tparam Component 
          * @param entity Must be a living entity
          * @return nullptr if entity is not alive or if component is not added
          */
+        // TODO: create a component wrapper that automatically updates the underlying pointer
+        // if it gets moved/removed by a removeComponent call
         template <class Component>
         Component* getComponent(Entity entity)
         {
@@ -288,6 +293,13 @@ namespace ECS
         ComponentMask mask;
         size_t index = -1;
         bool all = false;
+    public:
+        /**
+         * @brief From the current index of this EntityIterator, move the index forward to the first valid
+         * index. If no valid index is found, this EntityIterator will be equal to SceneView::end()
+         * @param index 
+         */
+        void gotoFirstValid();
 
         /**
          * @brief Tests if the index is in-bounds and if it points to entities that have
@@ -295,7 +307,7 @@ namespace ECS
          * @tparam ...Component
          */
         bool isValidIndex(size_t index);
-    public:
+
         EntityIterator(Scene* scene, bool all, ComponentMask mask, size_t startIndex);
 
         value_type operator*() const;
@@ -321,7 +333,7 @@ namespace ECS
             }
             else
             {
-                std::array<component_id> componentIds = {
+                std::array<component_id, sizeof...(Component)> componentIds = {
                     getComponentId<Component>()...
                 };
 
@@ -335,7 +347,9 @@ namespace ECS
         EntityIterator begin()
         {
             size_t firstIndex = 0;
-            return EntityIterator(scene, all, componentMask, firstIndex);
+            EntityIterator start(scene, all, componentMask, firstIndex);
+            start.gotoFirstValid();
+            return start;
         }
 
         EntityIterator end()
