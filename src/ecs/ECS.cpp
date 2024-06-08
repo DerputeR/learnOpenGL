@@ -102,7 +102,19 @@ namespace ECS
 
     EntityIterator& EntityIterator::operator++()
     {
+        do {
+            index += 1;
+        } while (!isValidIndex(index));
         return *this;
+    }
+
+    EntityIterator EntityIterator::operator++(int)
+    {
+        EntityIterator beforeInc = *this;
+        do {
+            index += 1;
+        } while (!isValidIndex(index));
+        return beforeInc;
     }
 
     bool EntityIterator::operator==(const EntityIterator& b) const
@@ -119,6 +131,6 @@ namespace ECS
 
     bool EntityIterator::isValidIndex(size_t index)
     {
-        return (all || (mask & (*entityMasks)[index]) != 0);
+        return index < entityMasks->size() && (all || (mask & (*entityMasks)[index]) != 0);
     }
 }

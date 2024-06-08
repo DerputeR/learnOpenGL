@@ -274,7 +274,7 @@ namespace ECS
         }
     };
 
-    struct EntityIterator
+    class EntityIterator
     {
         using iterator_category = std::forward_iterator_tag;
         using difference_type = std::ptrdiff_t;
@@ -289,16 +289,20 @@ namespace ECS
         size_t index = -1;
         bool all = false;
 
+        bool isValidIndex(size_t index);
+    public:
         EntityIterator(Scene* scene, bool all, ComponentMask mask, size_t startIndex);
 
         value_type operator*() const;
 
+        // prefix increment
         EntityIterator& operator++();
+
+        // postfix increment; the int param is a dummy param
+        EntityIterator operator++(int);
 
         bool operator==(const EntityIterator& b) const;
         bool operator!=(const EntityIterator& b) const;
-
-        bool isValidIndex(size_t index);
     };
 
     template <class... Component>
