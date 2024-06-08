@@ -289,6 +289,11 @@ namespace ECS
         size_t index = -1;
         bool all = false;
 
+        /**
+         * @brief Tests if the index is in-bounds and if it points to entities that have
+         * all of the listed Components registered
+         * @tparam ...Component
+         */
         bool isValidIndex(size_t index);
     public:
         EntityIterator(Scene* scene, bool all, ComponentMask mask, size_t startIndex);

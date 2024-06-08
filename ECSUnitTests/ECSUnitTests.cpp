@@ -181,4 +181,42 @@ namespace ECSUnitTests
 			Assert::IsTrue(isUpdated);
 		}
 	};
+
+	TEST_CLASS(SceneViewTests)
+	{
+		ECS::Scene scene;
+		ECS::Entity player;
+		ECS::Entity camera;
+		ECS::Entity physObj;
+
+	public:
+		TEST_METHOD_INITIALIZE(ECSInit)
+		{
+			scene = ECS::Scene();
+			player = scene.createEntity();
+			camera = scene.createEntity();
+			physObj = scene.createEntity();
+
+			scene.addComponent<Transform>(player);
+			scene.addComponent<Transform>(camera);
+			scene.addComponent<Transform>(physObj);
+
+			scene.addComponent<Rigidbody>(physObj);
+		}
+
+		TEST_METHOD(AllComponentsView)
+		{
+
+		}
+
+		TEST_METHOD(SingleComponentView)
+		{
+
+		}
+
+		TEST_METHOD(MultiComponentView)
+		{
+
+		}
+	};
 }

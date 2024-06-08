@@ -131,6 +131,6 @@ namespace ECS
 
     bool EntityIterator::isValidIndex(size_t index)
     {
-        return index < entityMasks->size() && (all || (mask & (*entityMasks)[index]) != 0);
+        return index < entityMasks->size() && (all || (mask & (*entityMasks)[index]) == mask);
     }
 }
