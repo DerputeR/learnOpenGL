@@ -289,7 +289,7 @@ namespace ECS
         size_t index = -1;
         bool all = false;
 
-        EntityIterator(Scene* scene, bool all, ComponentMask mask);
+        EntityIterator(Scene* scene, bool all, ComponentMask mask, size_t startIndex);
 
         value_type operator*() const;
 
@@ -325,7 +325,13 @@ namespace ECS
 
         EntityIterator begin()
         {
-            return EntityIterator(scene, all, componentMask);
+            size_t firstIndex = 0;
+            return EntityIterator(scene, all, componentMask, firstIndex);
+        }
+
+        EntityIterator end()
+        {
+            return EntityIterator(scene, all, componentMask, scene->getEntities().size());
         }
 
     private:
