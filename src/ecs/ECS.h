@@ -342,7 +342,7 @@ namespace ECS
                     componentMask.set(componentIds[i]);
                 }
             }
-        }     
+        }
 
         EntityIterator begin()
         {
