@@ -12,6 +12,7 @@
 namespace ECS
 {
     // shared consts
+
     const size_t MAX_COMPONENTS = 32;
     const size_t INITIAL_ENTITY_CAPACITY = 128;
 
@@ -111,6 +112,9 @@ namespace ECS
         }
     };
 
+    /**
+     * @brief Acts as a manager for entities and provides a way to create, destroy, access, and manage entities. 
+     */
     class Scene
     {
         std::vector<IComponentPool*> componentPools;
@@ -236,7 +240,7 @@ namespace ECS
         }
 
         /**
-         * @brief Retrives a pointer to the Component attached to the given entity, if one exists.
+         * @brief Retrieves a pointer to the Component attached to the given entity, if one exists.
          * Note: DO NOT store this pointer as the address it points to
          * could become invalid any time removeComponent gets called.
          * Always call getComponent instead!
