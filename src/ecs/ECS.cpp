@@ -36,14 +36,14 @@ namespace ECS
         return ent;
     }
 
-    const std::vector<Entity>& Scene::getEntities() const
+    const std::vector<Entity>* Scene::getEntities() const
     {
-        return liveList;
+        return &liveList;
     }
 
-    const std::vector<ComponentMask>& Scene::getComponentMasks() const
+    const std::vector<ComponentMask>* Scene::getComponentMasks() const
     {
-        return componentMasks;
+        return &componentMasks;
     }
 
     Entity Scene::nextFree()
@@ -75,6 +75,16 @@ namespace ECS
             liveList[entityMap[entity.id]] = liveList.back();
             liveList.pop_back();
 
+            // remove components from component pool
+            ComponentMask mask = componentMasks[entityMap[entity.id]];
+            for (int i = 0; i < MAX_COMPONENTS; i++)
+            {
+                if (mask.test(i))
+                {
+                    componentPools[i]->onEntityDestroyed(entity.id);
+                }
+            }
+
             // remove associated component mask
             componentMasks[entityMap[entity.id]] = componentMasks.back();
             componentMasks.pop_back();
@@ -90,8 +100,8 @@ namespace ECS
         : scene(scene),
         all(all),
         mask(mask),
-        entities(&(scene->getEntities())),
-        entityMasks(&(scene->getComponentMasks())),
+        entities((scene->getEntities())),
+        entityMasks((scene->getComponentMasks())),
         index(startIndex)
     { }
 

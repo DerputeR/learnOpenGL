@@ -29,7 +29,9 @@ namespace ECS
     // public-facing Entity used for indexing for components and systems
     struct Entity
     {
-        entity_id id;
+        // Identifier number for the entity
+        entity_id id; 
+        // We use a separate version number so we can recycle identifiers while also preventing cases where a system (badly) holds onto a reference to an entity that was destroyed and later recycled, thereby incorrectly performing some behavior or computation on the new entity with the recycled identifier.
         entity_version version;
 
         /**
@@ -73,8 +75,8 @@ namespace ECS
     template <class Component>
     struct ComponentPool : public IComponentPool
     {
-        SparseMap<entity_id, component_index> componentMap;
-        std::vector<Component> components;
+        SparseMap<entity_id, component_index> componentMap; // Maps entities to indicies in the packed component vector
+        std::vector<Component> components; // Packed vector of Components
     
         ComponentPool() :
             componentMap( INVALID_ENTITY_ID, INVALID_COMPONENT_INDEX, INITIAL_ENTITY_CAPACITY ),
@@ -82,7 +84,7 @@ namespace ECS
         { }
 
         /**
-         * @brief Creates a new Component and links it with id if one isn't already linked.
+         * @brief Creates a new Component and links it with the entity id, updating componentMap and the components vector.
          * This method does not update an entity's componentMask.
          * @param id
          */
@@ -94,7 +96,7 @@ namespace ECS
         }
 
         /**
-         * @brief Unlinks id from its Component, if it isn't already linked.
+         * @brief Unlinks the entity id from its Component, updating componentMap and repacking the packed components vector.
          * This method does not update the entity's componentMask.
          * @param id
          */
@@ -151,7 +153,7 @@ namespace ECS
          *		   or if it cannot be registered (component id >= MAX_COMPONENTS)
          */
         template <class Component>
-        bool isComponentRegistered()
+        bool isComponentRegistered() const
         {
             component_id id = getComponentId<Component>();
             if (id >= componentPools.size()) return false;
@@ -199,20 +201,33 @@ namespace ECS
         Entity createEntity();
 
         /**
-         * @return Returns a read-only vector of all current living entities. This list is a LIVE list.
+         * @return Returns a pointer to a read-only vector of all current living entities. The individual entities can be modified (but shouldn't!), but no entity can be added or removed to the list. This list is a LIVE list.
          */
-        const std::vector<Entity>& getEntities() const;
+        const std::vector<Entity>* getEntities() const;
 
         /**
-         * @return Returns a read-only vector of all current living entities' component masks. This list is a LIVE list.
+         * @return Returns a pointer to a read-only vector of all current living entities' component masks. The individual masks can be modified, no mask can be added or removed to the list. This list is a LIVE list.
          */
-        const std::vector<ComponentMask>& getComponentMasks() const;
+        const std::vector<ComponentMask>* getComponentMasks() const;
+
+        /**
+         * @return Returns a pointer to a read-only LIVE vector of a component pool for a given Component.
+         */
+        template <class Component>
+        const std::vector<Component>* getComponentPool() const
+        {
+            if (!isComponentRegistered<Component>()) return nullptr;
+            component_id compId = getComponentId<Component>();
+            IComponentPool* pool = componentPools[compId];
+            ComponentPool<Component>* cpool = static_cast<ComponentPool<Component>*>(pool);
+            return &(cpool->components);
+        }
 
         /**
          * @brief If the given entity is in the live entities list, it will
          * be removed, and this entity will be returned to the free list with
          * its version incremented.
-         * This method does not deregister components.
+         * This method does not deregister components, but does unassign them from component pools.
          * @param entity
          */
         void destroyEntity(Entity entity);
@@ -241,7 +256,7 @@ namespace ECS
 
         /**
          * @brief Retrieves a pointer to the Component attached to the given entity, if one exists.
-         * Note: DO NOT store this pointer as the address it points to
+         * Note: DO NOT store this pointer long-term as the address it points to
          * could become invalid any time removeComponent gets called.
          * Always call getComponent instead!
          * @tparam Component 
@@ -358,7 +373,7 @@ namespace ECS
 
         EntityIterator end()
         {
-            return EntityIterator(scene, all, componentMask, scene->getEntities().size());
+            return EntityIterator(scene, all, componentMask, scene->getEntities()->size());
         }
 
     private:

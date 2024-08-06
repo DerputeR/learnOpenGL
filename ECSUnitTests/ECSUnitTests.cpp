@@ -2,6 +2,7 @@
 #include "CppUnitTest.h"
 #include "../src/ecs/ECS.h"
 #include <vector>
+#include <iostream>
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
@@ -162,16 +163,14 @@ namespace ECSUnitTests
 
 		TEST_METHOD(EntitiesListTest)
 		{
-			auto e = scene.getEntities();
-			e.push_back(ECS::Entity{ 12, 12 });
-			auto e2 = scene.getEntities();
-			Assert::IsTrue(e.size() != e2.size()); // make sure read-only is working
+			auto* e = scene.getEntities();
+			//e->push_back(ECS::Entity{ 12, 12 }); // illegal op
 
 			ECS::Entity ant = scene.createEntity();
-			auto& e3 = scene.getEntities();
-			Assert::IsTrue(e2 != e3);
+			auto* e2 = scene.getEntities();
+			Assert::IsTrue(e == e2); // pointer is to a live list and should reflect this
 			bool isUpdated = false;
-			for (const auto& f : e3)
+			for (const auto& f : *e2)
 			{
 				if (f == ant)
 				{
@@ -179,6 +178,38 @@ namespace ECSUnitTests
 				}
 			}
 			Assert::IsTrue(isUpdated);
+		}
+
+		TEST_METHOD(EntityDestroyTest)
+		{
+			scene.addComponent<Transform>(player);
+			scene.addComponent<Rigidbody>(player);
+			scene.addComponent<Transform>(camera);
+			scene.addComponent<Transform>(physObj);
+			scene.addComponent<Rigidbody>(physObj);
+
+			scene.getComponent<Transform>(player)->position.x = 10;
+			scene.getComponent<Transform>(physObj)->position.x = 5;
+
+			auto* transformPool = scene.getComponentPool<Transform>();
+			Assert::IsTrue(transformPool->size() == 3);
+			Assert::IsTrue((*transformPool)[0].position.x == 10);
+
+			scene.destroyEntity(player);
+			Assert::IsTrue(transformPool->size() == 2);
+			Assert::IsTrue((*transformPool)[0].position.x == 5);
+
+			player = scene.createEntity();
+			Assert::IsTrue(transformPool->size() == 2);
+			Assert::IsTrue((*transformPool)[0].position.x == 5);
+
+			scene.addComponent<Transform>(player);
+			Assert::IsTrue(transformPool->size() == 3);
+			Assert::IsTrue((*transformPool)[0].position.x == 5);
+			Assert::IsTrue((*transformPool)[2].position.x == 0);
+
+			scene.getComponent<Transform>(player)->position.x = -10;
+			Assert::IsTrue((*transformPool)[2].position.x == -10);
 		}
 	};
 

@@ -4,7 +4,7 @@
 
 /**
  * @brief Templated class to help create bidirectional maps using std::vector
- * The sparseMap will map index K to I, and the packedMap will map index I back to V.
+ * The sparseMap will map index K to I, and the packedMap will map index I back to K.
  * Note that this will NOT manage a value vector; this is up to you to manage
  * @tparam K integer type used to index sparseMap to get indices I
  * @tparam I integer type used to index packedMap to get keys K
@@ -13,8 +13,8 @@ template <typename K, typename I>
 class SparseMap
 {
 private:
-    std::vector<I> sparseMap;
-    std::vector<K> packedMap;
+    std::vector<I> sparseMap; // Maps a key K to an index I in the packed map
+    std::vector<K> packedMap; // Maps an index I back to a key K in the sparse map
 
     K invalidKey;
     I invalidIndex;
