@@ -1,10 +1,10 @@
 #pragma once
-#include "../scene/Transform.h"
+#include "OldTransform.h"
 
 /**
  * @brief Entities are transforms that are meant to dynamically move
  */
-class Entity : public Transform
+class Entity : public OldTransform
 {
 protected:
 	glm::vec3 velocity;

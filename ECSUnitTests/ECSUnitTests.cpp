@@ -6,7 +6,6 @@
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
-
 namespace ECSUnitTests
 {
 	struct vec3
