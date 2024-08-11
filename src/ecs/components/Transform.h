@@ -8,6 +8,23 @@ namespace ECS::Components
     class Transform
     {
     public:
+        /// WARNING: BECAUSE COMPONENT POINTERS ARE UNSTABLE, THIS IS INHERENTLY UNSTABLE.
+        /// WE CANNOT RELIABLY KEEP POINTERS TO PARENT TRANSFORMS IF WE EVER REMOVE TRANSFORM
+        /// COMPONENTS.
+
+        /**
+         * @brief Sets the parent of this Transform and returns the previous parent
+         * @param parent 
+         * @return The previously set parent
+         */
+        Transform* setParent(const Transform* parent);
+
+        /**
+         * @brief Returns a pointer to the parent Transform
+         * @return A pointer to the parent Transform
+         */
+        Transform* getParent();
+
         /**
          * @return A copy of this Transform's local position vector
          */

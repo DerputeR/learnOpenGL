@@ -247,7 +247,7 @@ namespace ECSUnitTests
 			ECS::SceneView<> entities{ scene };
 			std::vector<ECS::Entity> listedEntities;
 			std::vector<ECS::Entity> expectedEntities { player, camera, physObj, dummy };
-			for (auto& entity : entities)
+			for (const auto& entity : entities)
 			{
 				listedEntities.push_back(entity);
 			}
@@ -263,7 +263,7 @@ namespace ECSUnitTests
 			ECS::SceneView<Transform> entities{ scene };
 			std::vector<ECS::Entity> listedEntities;
 			std::vector<ECS::Entity> expectedEntities{ player, camera, physObj };
-			for (auto& entity : entities)
+			for (const auto& entity : entities)
 			{
 				listedEntities.push_back(entity);
 			}
@@ -279,7 +279,7 @@ namespace ECSUnitTests
 			ECS::SceneView<Rigidbody> entities{ scene };
 			std::vector<ECS::Entity> listedEntities;
 			std::vector<ECS::Entity> expectedEntities{ physObj, dummy };
-			for (auto& entity : entities)
+			for (const auto& entity : entities)
 			{
 				listedEntities.push_back(entity);
 			}
@@ -295,7 +295,7 @@ namespace ECSUnitTests
 			ECS::SceneView<Transform, Rigidbody> entities{ scene };
 			std::vector<ECS::Entity> listedEntities;
 			std::vector<ECS::Entity> expectedEntities{ physObj };
-			for (auto& entity : entities)
+			for (const auto& entity : entities)
 			{
 				listedEntities.push_back(entity);
 			}
