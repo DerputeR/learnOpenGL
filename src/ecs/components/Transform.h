@@ -2,29 +2,31 @@
 #include <vector>
 #include <glm/glm.hpp>
 #include <glm/ext/quaternion_float.hpp>
+#include "../ECS.h"
 
 namespace ECS::Components
 {
-    class Transform
+    class ParentedComponent : public ECS::IComponent
     {
     public:
-        /// WARNING: BECAUSE COMPONENT POINTERS ARE UNSTABLE, THIS IS INHERENTLY UNSTABLE.
-        /// WE CANNOT RELIABLY KEEP POINTERS TO PARENT TRANSFORMS IF WE EVER REMOVE TRANSFORM
-        /// COMPONENTS.
+        /**
+         * @brief Sets the parent entity. If the child entity has a Transform component, its dirty flag is set.
+         * @param parent
+         */
+        void setParent(Entity parent);
 
         /**
-         * @brief Sets the parent of this Transform and returns the previous parent
-         * @param parent 
-         * @return The previously set parent
+         * @brief Returns the parent Entity
+         * @return The parent entity
          */
-        Transform* setParent(const Transform* parent);
+        Entity getParent();
+    private:
+        Entity parent = ECS::INVALID_ENTITY;
+    };
 
-        /**
-         * @brief Returns a pointer to the parent Transform
-         * @return A pointer to the parent Transform
-         */
-        Transform* getParent();
-
+    class Transform : public ECS::IComponent
+    {
+    public:
         /**
          * @return A copy of this Transform's local position vector
          */
@@ -57,6 +59,8 @@ namespace ECS::Components
          * @return A copy of this Transform's transformation matrix
          */
         glm::mat4 getMatrix();
+
+        /// TODO: NEED TO PROPOGATE DIRTY FLAG SET TO CHILDREN
 
         /**
          * @brief Updates this Transform's local position vector
@@ -91,14 +95,16 @@ namespace ECS::Components
          */
         void setLocalRotation(float pitch, float yaw, float roll);
 
+        /**
+         * @brief Manually set the dirty flag to true
+         */
+        void setDirty();
         // TODO: methods for setting global position and rotation. scale is kinda tricky...
-        
 
 
     private:
 
-        // TODO: figure out how to flatten/linearize this nicely
-        Transform* parent = nullptr;
+        Entity parent = ECS::INVALID_ENTITY;
 
         // local transforms
         

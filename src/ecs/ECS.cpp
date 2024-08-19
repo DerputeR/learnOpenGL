@@ -17,6 +17,22 @@ namespace ECS
         return (id == other.id) && (version == other.version);
     }
 
+    IComponent::IComponent(Scene* owningScene, Entity owningEntity)
+    {
+        this->owningScene = owningScene;
+        this->owningEntity = owningEntity;
+    }
+
+    Scene* IComponent::getScene()
+    {
+        return owningScene;
+    }
+
+    Entity IComponent::getOwner()
+    {
+        return owningEntity;
+    }
+
     Scene::Scene() : freeList(INITIAL_ENTITY_CAPACITY),
         entityCapacity{ INITIAL_ENTITY_CAPACITY },
         entityMap( ECS::INVALID_ENTITY_ID, ECS::INVALID_ENTITY_ID, INITIAL_ENTITY_CAPACITY ) 
@@ -61,7 +77,7 @@ namespace ECS
         return ent;
     }
 
-    bool Scene::isAlive(Entity entity)
+    bool Scene::isAlive(Entity entity) const
     {
         return (entityMap[entity.id] != INVALID_ENTITY_ID
             && entity.version == liveList[entityMap[entity.id]].version);

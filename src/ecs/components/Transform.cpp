@@ -4,6 +4,36 @@
 
 namespace ECS::Components
 {
+
+    bool cascadeDirtyFlag(Entity parent)
+    {
+
+    }
+
+    void ParentedComponent::setParent(Entity parent)
+    {
+        if (!owningScene->isAlive(parent)) return;
+        Entity lastParent = parent;
+        this->parent = parent;
+        Transform* t = owningScene->getComponent<Transform>(owningEntity);
+        if (t)
+        {
+            t->setDirty();
+            // cascade this down to all children of t
+            cascadeDirtyFlag(owningEntity);
+        }
+    }
+
+    Entity ParentedComponent::getParent()
+    {
+        return parent;
+    }
+
+    void Transform::setDirty()
+    {
+        this->dirty = true;
+    }
+
     glm::vec3 Transform::getLocalPosition() const
     {
         return position;
@@ -21,12 +51,14 @@ namespace ECS::Components
 
     glm::vec3 Transform::getPosition()
     {
-        return glm::vec3{ parent->getMatrix() * glm::vec4{ position, 1.0f } };
+        // return glm::vec3{ parent->getMatrix() * glm::vec4{ position, 1.0f } };
+        return glm::vec3{};
     }
 
     glm::quat Transform::getRotation()
     {
-        return glm::quat_cast(parent->getMatrix() * glm::mat4_cast(this->rotation));
+        // return glm::quat_cast(parent->getMatrix() * glm::mat4_cast(this->rotation));
+        return glm::quat{};
     }
 
     glm::mat4 Transform::getMatrix()
