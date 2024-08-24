@@ -36,9 +36,9 @@ public:
 	 * @return Const pointer to angles
 	 */
 	const glm::vec3* getLocalAnglesPointer();
-	void setLocalPosition(const glm::vec3& pos);
+	virtual void setLocalPosition(const glm::vec3& pos);
 	void setLocalScale(const glm::vec3& scale);
-	void setLocalAngles(const glm::vec3& angles);
+	virtual void setLocalAngles(const glm::vec3& angles);
 	glm::mat4 getTransformMatrix();
 	glm::vec3 getForward();
 	glm::vec3 getUp();

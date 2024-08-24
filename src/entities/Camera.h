@@ -1,9 +1,9 @@
 #pragma once
-#include "Transform.h"
+#include "../scene/Transform.h"
 
 static const int kDirtyFlagView = 1 << 4;
 
-class Camera : public OldTransform
+class Camera : public Transform
 {
 protected:
 	float vFov = 90.0f;
