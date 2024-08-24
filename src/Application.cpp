@@ -12,12 +12,7 @@
 #include "gui/InfoOverlay.h"
 #include "misc/Printable.h"
 #include "entities/player/Player.h"
-
-const int kDefaultWindowWidth = 800;
-const int kDefaultWindowHeight = 600;
-
-int windowWidth = kDefaultWindowWidth;
-int windowHeight = kDefaultWindowHeight;
+#include "settings/VideoSettings.h"
 
 static std::string vertShaderPath = "resources/shaders/vertex_basic.glsl";
 static std::string fragShaderPath = "resources/shaders/fragment_basic.glsl";
@@ -68,18 +63,21 @@ static auto infoCamRot = GUI::Debug::LabeledVec3<float>("Cam rot", "pitch", "yaw
 static auto infoPlayerPos = GUI::Debug::LabeledVec3<float>("Player pos", "x", "y", "z", player.getLocalPositionPointer());
 
 glm::mat4 UpdateProjectionMatrix(bool perspective) {
+	float width = static_cast<float>(Settings::Video::windowWidth);
+	float height = static_cast<float>(Settings::Video::windowHeight);
+	int windowHeight = 0;
 	if (!perspective) {
 		return glm::ortho(
-			-1.0f * ((float)windowWidth / (float)windowHeight), // left
-			1.0f * ((float)windowWidth / (float)windowHeight),  // right
-			-1.0f, // bottom
-			1.0f,  // top
-			-10.0f,   // near
-			10.0f  // far
+			-1.0f * (width / height), // left
+			1.0f * (width / height),  // right
+			-1.0f,                    // bottom
+			1.0f,                     // top
+			-10.0f,                   // near
+			10.0f                     // far
 		);
 	}
 	else {
-		return glm::perspective(glm::radians(cam->getVerticalFov()), (float)windowWidth / (float)windowHeight, 0.1f, 100.0f);
+		return glm::perspective(glm::radians(cam->getVerticalFov()), width / height, 0.1f, 100.0f);
 	}
 }
 
@@ -88,8 +86,8 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 		std::cout << "Ignoring " << width << "x" << height << " resize" << std::endl;
 		return;
 	}
-	windowWidth = width;
-	windowHeight = height;
+	Settings::Video::windowWidth = width;
+	Settings::Video::windowHeight = height;
 	glViewport(0, 0, width, height);
 	projectionMatrix = UpdateProjectionMatrix(cam->usePerspective);
 }
@@ -217,7 +215,7 @@ void ProcessInput(GLFWwindow* window) {
 
 void ToggleCursorLock(GLFWwindow* window, bool locked) {
 	if (locked) { // just locked, so don't snap to where mouse was when not locked
-		glfwSetCursorPos(window, windowWidth / 2, windowHeight / 2);
+		glfwSetCursorPos(window, Settings::Video::windowWidth / 2.0, Settings::Video::windowHeight / 2.0);
 		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 		glfwSetCursorPos(window, 0, 0);
 	}
@@ -242,7 +240,7 @@ int main() {
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	//glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // Needed for MacOS
 
-	GLFWwindow* window = glfwCreateWindow(windowWidth, windowHeight, "learnOpenGL", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(Settings::Video::windowWidth, Settings::Video::windowHeight, "learnOpenGL", NULL, NULL);
 	if (window == NULL) {
 		std::cout << "Failed to generate GLFW window!" << std::endl;
 		glfwTerminate();
@@ -256,7 +254,7 @@ int main() {
 		return -1;
 	}
 
-	glViewport(0, 0, windowWidth, windowHeight);
+	glViewport(0, 0, Settings::Video::windowWidth, Settings::Video::windowHeight);
 
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	glfwSetWindowIconifyCallback(window, window_iconify_callback);
