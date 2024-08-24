@@ -17,21 +17,21 @@ namespace ECS
         return (id == other.id) && (version == other.version);
     }
 
-    IComponent::IComponent(Scene* owningScene, Entity owningEntity)
-    {
-        this->owningScene = owningScene;
-        this->owningEntity = owningEntity;
-    }
+    //IComponent::IComponent(Scene* owningScene, Entity owningEntity)
+    //{
+    //    this->owningScene = owningScene;
+    //    this->owningEntity = owningEntity;
+    //}
 
-    Scene* IComponent::getScene()
-    {
-        return owningScene;
-    }
+    //Scene* IComponent::getScene()
+    //{
+    //    return owningScene;
+    //}
 
-    Entity IComponent::getOwner()
-    {
-        return owningEntity;
-    }
+    //Entity IComponent::getOwner()
+    //{
+    //    return owningEntity;
+    //}
 
     Scene::Scene() : freeList(INITIAL_ENTITY_CAPACITY),
         entityCapacity{ INITIAL_ENTITY_CAPACITY },

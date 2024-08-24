@@ -7,21 +7,12 @@ namespace ECS::Components
 
     bool cascadeDirtyFlag(Entity parent)
     {
-
+        return false;
     }
 
     void ParentedComponent::setParent(Entity parent)
     {
-        if (!owningScene->isAlive(parent)) return;
-        Entity lastParent = parent;
-        this->parent = parent;
-        Transform* t = owningScene->getComponent<Transform>(owningEntity);
-        if (t)
-        {
-            t->setDirty();
-            // cascade this down to all children of t
-            cascadeDirtyFlag(owningEntity);
-        }
+        
     }
 
     Entity ParentedComponent::getParent()

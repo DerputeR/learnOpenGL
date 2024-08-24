@@ -6,7 +6,7 @@
 
 namespace ECS::Components
 {
-    class ParentedComponent : public ECS::IComponent
+    class ParentedComponent
     {
     public:
         /**
@@ -24,7 +24,7 @@ namespace ECS::Components
         Entity parent = ECS::INVALID_ENTITY;
     };
 
-    class Transform : public ECS::IComponent
+    class Transform
     {
     public:
         /**
@@ -115,6 +115,6 @@ namespace ECS::Components
         // global transforms
 
         glm::mat4 transformationMatrix{ 1.0f };
-        bool dirty = false;
+        bool dirty = true;
     };
 }

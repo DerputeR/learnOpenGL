@@ -59,19 +59,6 @@ namespace ECS
         return componentId;
     }
 
-    // Optional interface for Components with strict relationships to share some initializing data and functions
-    class IComponent
-    {
-    protected:
-        Scene* owningScene;
-        Entity owningEntity;
-    public:
-        IComponent(Scene* owningScene, Entity owningEntity);
-
-        Scene* getScene();
-        Entity getOwner();
-    };
-
     /**
      * @brief Interface common to ComponentPools.
      * This is so that when an entity is destroyed, we can simply
@@ -88,7 +75,7 @@ namespace ECS
     template <class Component>
     struct ComponentPool : public IComponentPool
     {
-        SparseMap<entity_id, component_index> componentMap; // Maps entities to indicies in the packed component vector
+        SparseMap<entity_id, component_index> componentMap; // Maps entities to indices in the packed component vector
         std::vector<Component> components; // Packed vector of Components
     
         ComponentPool() :
@@ -198,7 +185,7 @@ namespace ECS
             {
                 registerComponent<Component>();
                 component_id compId = getComponentId<Component>();
-                if (componentMasks[entityMap[entity.id]].test) return; // don't add if already added
+                if (componentMasks[entityMap[entity.id]].test(compId)) return; // don't add if already added
                 componentMasks[entityMap[entity.id]].set(compId);
                 IComponentPool* pool = componentPools[compId];
                 ComponentPool<Component>* cpool = static_cast<ComponentPool<Component>*>(pool);
@@ -209,7 +196,7 @@ namespace ECS
         /**
          * @brief Retrieves a pointer to the Component attached to the given entity, if one exists.
          * Note: DO NOT store this pointer long-term as the address it points to
-         * could become invalid any time removeComponent gets called.
+         * could become invalid any time removeComponent gets called or the component pool gets resized.
          * Always call getComponent instead!
          * @tparam Component
          * @param entity Must be a living entity
@@ -243,7 +230,7 @@ namespace ECS
             if (!isComponentRegistered<Component>()) return;
             if (!isAlive(entity)) return;
             component_id compId = getComponentId<Component>();
-            if (!componentMasks[entityMap[entity.id]].test) return; // don't remove if already removed
+            if (!componentMasks[entityMap[entity.id]].test(compId)) return; // don't remove if already removed
             componentMasks[entityMap[entity.id]].reset(compId);
             IComponentPool* pool = componentPools[compId];
             ComponentPool<Component>* cpool = static_cast<ComponentPool<Component>*>(pool);
