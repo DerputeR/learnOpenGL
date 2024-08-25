@@ -8,20 +8,35 @@
 #include <iostream>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace Engine
 {
-	static float percent = 0.0f;
-
-	// matrices
+	// temporary static variables (will clean up later)
+	static glm::vec3 world_up{ 0.0f, 1.0f, 0.0f };
+	static glm::vec3 world_right{ 1.0f, 0.0f, 0.0f };
+	static glm::vec3 world_forward{ 0.0f, 0.0f, 1.0f };
+	static float percent = 1.0f; // 0-1
 	static glm::mat4 modelMatrix{ 1.0f };
-	static glm::mat4 viewMatrix{ 1.0f };
+	static glm::mat4 viewMatrix = glm::lookAt(
+		glm::vec3{ 0.0f },	 // cam start position
+		-world_forward,      // cam direction is opposite of its physical forward vector
+		{0, 1.0f, 0}             // world up direction
+	);
 	static glm::mat4 transform{ 1.0f }; // single arg appears to just scale the identity matrix; no arg gives null (all 0s) matrix
 	static float rotationDeg = 0;
 	static glm::vec3 translation{ 0.0f, -0.3f, 0.0f };
 	static glm::vec3 scale{ 0.5f, 0.5f, 0.5f };
-
-	static glm::mat4 projectionMatrix{ };
+	static glm::mat4 projectionMatrix
+		//= glm::perspective(glm::radians(74.0f), (float)800 / (float)600, 0.1f, 100.0f);
+		= glm::ortho(
+			-1.0f * (800.0f / 600.0f), // left
+			1.0f * (800.0f / 600.0f),  // right
+			-1.0f, // bottom
+			1.0f,  // top
+			-10.0f,   // near
+			10.0f  // far
+		);
 
 	/// Tri draw call. To remove later
 	void DrawTriangle(unsigned int vao, unsigned int triCount) {
@@ -29,6 +44,65 @@ namespace Engine
 		//glDrawElements(GL_TRIANGLES, triCount, GL_UNSIGNED_INT, 0); // requires an ebo (indices to a vao)
 		glDrawArrays(GL_TRIANGLES, 0, triCount);
 		glBindVertexArray(NULL);
+	}
+
+	void DemoData::SetupBuffers()
+	{
+		// Vertex buffer object
+		glGenBuffers(1, &vbo);
+		// Element buffer object
+		glGenBuffers(1, &ebo);
+		// Vertex array(attribute) object
+		glGenVertexArrays(1, &vao);
+
+		// bind VAO to start tracking state
+		glBindVertexArray(vao);
+
+		// bind VBO and copy vertices array to buffer
+		glBindBuffer(GL_ARRAY_BUFFER, vbo);
+		// NOTE: the size is in BYTES, not number of elements!
+		//glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STREAM_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+		// ! disabled for now due to headache with cube indices
+		//// bind EBO and copy indices array to buffer
+		//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+		//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+		/* Set vertex attributes pointers.
+		Attribute (0) (x, y, z) has (3) non-normalized(GL_FALSE) (GL_FLOAT) elements.
+		It starts at (0) byte offset, and repeats every (8 * sizeof(float)) bytes.
+
+		Attribute (1) (r, g, b) has (3) non-normalized(GL_FALSE) (FL_FLOAT) elements.
+		It starts at (3 * sizeof(float)) byte offset, and repeats every (8 * sizeof(float)) bytes.
+
+		Attribute (2) (u, v) has (2) non-normalized(GL_FALSE) (FL_FLOAT) elements.
+		It starts at (6 * sizeof(float)) byte offset, and repeats every (8 * sizeof(float)) bytes.
+		*/
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+		// enable attribute 0 (x, y, z)
+		glEnableVertexAttribArray(0);
+		// enable attribute 1 (r, g, b)
+		glEnableVertexAttribArray(1);
+		// enable attribute 2 (u, v)
+		glEnableVertexAttribArray(2);
+
+		// unbind VAO to stop tracking state
+		glBindVertexArray(NULL);
+	}
+
+	void DemoData::SetupUniforms(unsigned int shader_program)
+	{
+		time_uniform = glGetUniformLocation(shader_program, "time");
+		percent_uniform = glGetUniformLocation(shader_program, "percent");
+		texture0_uniform = glGetUniformLocation(shader_program, "texture0");
+		texture1_uniform = glGetUniformLocation(shader_program, "texture1");
+		transform_uniform = glGetUniformLocation(shader_program, "transform");
+		model_matrix_uniform = glGetUniformLocation(shader_program, "modelMatrix");
+		view_matrix_uniform = glGetUniformLocation(shader_program, "viewMatrix");
+		proj_matrix_uniform = glGetUniformLocation(shader_program, "projMatrix");
 	}
 
 	/// Demo data. To remove later
@@ -175,69 +249,22 @@ namespace Engine
 		ImGui_ImplGlfw_InitForOpenGL(window, true);
 		ImGui_ImplOpenGL3_Init();
 
-		// Vertex buffer object
-		glGenBuffers(1, &demo_data.vbo);
-		// Element buffer object
-		glGenBuffers(1, &demo_data.ebo);
-		// Vertex array(attribute) object
-		glGenVertexArrays(1, &demo_data.vao);
-
-		// bind VAO to start tracking state
-		glBindVertexArray(demo_data.vao);
-
-		// bind VBO and copy vertices array to buffer
-		glBindBuffer(GL_ARRAY_BUFFER, demo_data.vbo);
-		//glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STREAM_DRAW);
-		//glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-		// ! disabled for now due to headache with cube indices
-		//// bind EBO and copy indices array to buffer
-		//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-		//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-		/* Set vertex attributes pointers.
-		Attribute (0) (x, y, z) has (3) non-normalized(GL_FALSE) (GL_FLOAT) elements.
-		It starts at (0) byte offset, and repeats every (8 * sizeof(float)) bytes.
-
-		Attribute (1) (r, g, b) has (3) non-normalized(GL_FALSE) (FL_FLOAT) elements.
-		It starts at (3 * sizeof(float)) byte offset, and repeats every (8 * sizeof(float)) bytes.
-
-		Attribute (2) (u, v) has (2) non-normalized(GL_FALSE) (FL_FLOAT) elements.
-		It starts at (6 * sizeof(float)) byte offset, and repeats every (8 * sizeof(float)) bytes.
-		*/
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-		// enable attribute 0 (x, y, z)
-		glEnableVertexAttribArray(0);
-		// enable attribute 1 (r, g, b)
-		glEnableVertexAttribArray(1);
-		// enable attribute 2 (u, v)
-		glEnableVertexAttribArray(2);
-
-		// unbind VAO to stop tracking state
-		glBindVertexArray(NULL);
-
-		// note: shaders are not part of VAO state
-
+		
 		// parse and prepare shader code
+		// note: shaders are not part of VAO state
 		ShaderLoader::ShaderSources shaderSources = ShaderLoader::ParseShaderSources(ShaderLoader::BASIC_VERT_SHADER_PATH, ShaderLoader::BASIC_FRAG_SHADER_PATH);
 
 		// compile, link, and validate shader program
 		shader_program = ShaderLoader::CreateShaderProgram(shaderSources.vertShaderSrc, shaderSources.fragShaderSrc);
 		glUseProgram(shader_program);
 
+		// uniforms
+		demo_data.SetupUniforms(shader_program);
+
 		// textures
 		demo_data.SetupTextures();
 
-		demo_data.time_uniform = glGetUniformLocation(shader_program, "time");
-		demo_data.percent_uniform = glGetUniformLocation(shader_program, "percent");
-		demo_data.texture0_uniform = glGetUniformLocation(shader_program, "texture0");
-		demo_data.texture1_uniform = glGetUniformLocation(shader_program, "texture1");
-		demo_data.transform_uniform = glGetUniformLocation(shader_program, "transform");
-		demo_data.model_matrix_uniform = glGetUniformLocation(shader_program, "modelMatrix");
-		demo_data.view_matrix_uniform = glGetUniformLocation(shader_program, "viewMatrix");
-		demo_data.proj_matrix_uniform = glGetUniformLocation(shader_program, "projMatrix");
+
 		glUniform1i(demo_data.texture0_uniform, 0);
 		glUniform1i(demo_data.texture1_uniform, 1);
 
@@ -252,14 +279,14 @@ namespace Engine
 			clock.Advance();
 
 			// start ImGui frame
-			//ImGui_ImplOpenGL3_NewFrame();
-			//ImGui_ImplGlfw_NewFrame();
-			//ImGui::NewFrame();
+			ImGui_ImplOpenGL3_NewFrame();
+			ImGui_ImplGlfw_NewFrame();
+			ImGui::NewFrame();
 
 			// input
 			glfwPollEvents();
-			//PollInput();
-			//ProcessInput();
+			PollInput();
+			ProcessInput();
 
 			//ImGui::ShowDemoWindow();
 
@@ -286,16 +313,16 @@ namespace Engine
 			DrawTriangle(demo_data.vao, 36);
 
 			//// Render ImGui
-			//ImGui::Render();
-			//ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+			ImGui::Render();
+			ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-			//if (io->ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-			//{
-			//	GLFWwindow* backup_current_context = glfwGetCurrentContext();
-			//	ImGui::UpdatePlatformWindows();
-			//	ImGui::RenderPlatformWindowsDefault();
-			//	glfwMakeContextCurrent(backup_current_context);
-			//}
+			if (io->ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+			{
+				GLFWwindow* backup_current_context = glfwGetCurrentContext();
+				ImGui::UpdatePlatformWindows();
+				ImGui::RenderPlatformWindowsDefault();
+				glfwMakeContextCurrent(backup_current_context);
+			}
 
 			// check and call events and swap buffers
 

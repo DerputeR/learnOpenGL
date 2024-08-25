@@ -48,7 +48,7 @@ namespace Engine
     struct DemoData
     {
         // temporary vertices for a vertically stretched cube
-        std::vector<float> vertices = {
+        float vertices[36 * 8] = {
             -0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
              0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
              0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,
@@ -110,6 +110,8 @@ namespace Engine
         unsigned int view_matrix_uniform = 0;
         unsigned int proj_matrix_uniform = 0;
 
+        void SetupUniforms(unsigned int shader_program);
+        void SetupBuffers();
         void SetupTextures();
     };
 
