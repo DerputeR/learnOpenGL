@@ -12,7 +12,3 @@ void UpdateTransformMatrix();
 void UpdateModelMatrix();
 void UpdateViewMatrix();
 
-void PollInput(GLFWwindow* window, ImGuiIO& io);
-void ProcessInput(GLFWwindow *window);
-void ToggleCursorLock(GLFWwindow* window, bool locked);
-

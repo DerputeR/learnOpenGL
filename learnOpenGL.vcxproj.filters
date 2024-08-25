@@ -90,7 +90,7 @@
     <ClCompile Include="src\entities\OldTransform.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\settings\VideoSettings.cpp">
+    <ClCompile Include="src\engine\EngineCore.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -1034,10 +1034,10 @@
     <ClInclude Include="src\entities\OldTransform.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\settings\VideoSettings.h">
+    <ClInclude Include="src\misc\TinyStructs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\misc\TinyStructs.h">
+    <ClInclude Include="src\engine\EngineCore.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -6,6 +6,9 @@
 #include <GLFW/glfw3.h>
 #include <errno.h>
 
+const std::string ShaderLoader::BASIC_VERT_SHADER_PATH = "resources/shaders/vertex_basic.glsl";
+const std::string ShaderLoader::BASIC_FRAG_SHADER_PATH = "resources/shaders/fragment_basic.glsl";
+
 ShaderLoader::ShaderSources ShaderLoader::ParseCombinedShaderSource(const std::string& filepath) {
 	std::ifstream stream(filepath);
 	std::string line;

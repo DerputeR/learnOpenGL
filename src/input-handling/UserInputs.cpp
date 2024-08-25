@@ -4,6 +4,8 @@
 namespace user_input {
 
 	bool cursor_locked = true;
+	float mouse_x = 0.0f;
+	float mouse_y = 0.0f;
 	bool should_quit = false;
 	bool wireframe_enabled = false;
 	bool perspective_enabled = true;

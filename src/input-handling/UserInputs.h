@@ -8,6 +8,8 @@ namespace user_input {
 	// window
 	//TrackedValue<bool> cursor_locked = true;
 	extern bool cursor_locked;
+	extern float mouse_x;
+	extern float mouse_y;
 	extern bool should_quit;
 	extern basic_input::KeyInput in_toggle_cursor_lock;
 	extern basic_input::KeyInput in_quit;

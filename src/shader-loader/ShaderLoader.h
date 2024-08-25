@@ -4,7 +4,7 @@
 
 class ShaderLoader {
 	enum class ShaderType {
-		NONE = -1,
+		NONE = -1, 
 		VERTEX = 0,
 		FRAGMENT = 1
 	};
@@ -12,6 +12,9 @@ class ShaderLoader {
 	static std::string TypeToName(unsigned int type);
 	static unsigned int CompileShader(unsigned int type, const std::string& source);
 public:
+	static const std::string BASIC_VERT_SHADER_PATH;
+	static const std::string BASIC_FRAG_SHADER_PATH;
+
 	struct ShaderSources {
 		std::string vertShaderSrc;
 		std::string fragShaderSrc;
